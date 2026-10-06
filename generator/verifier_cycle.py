@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
-"""Deux régénérations de ids_sma.gaml : le corps des zones @user-* doit rester identique.
-
-  1. génération
-  2. écriture d'un marqueur dans chaque zone
-  3. régénération : le marqueur est intact
-  4. seconde régénération : fichier identique à l'étape 3
-  5. zone retirée du modèle : le générateur refuse d'écrire
-
-Un commentaire d'intention émis dans la zone était relu comme du code utilisateur
-et dupliqué à chaque passage. La seconde régénération attrape ce cas.
-"""
+"""Deux régénérations : le corps des zones @user-* reste identique."""
 import os
 import re
 import shutil
