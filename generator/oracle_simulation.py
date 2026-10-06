@@ -1,30 +1,12 @@
 #!/usr/bin/env python3
-"""
-Oracle de la simulation — transcription Python du GAML complété.
+"""Rejoue en Python le métier des zones @user-* de ids_sma.gaml, sur tout KDDTest+.
 
-Question posée
---------------
-Le code métier écrit dans les zones protégées reproduit-il les performances
-mesurées à l'Étape 3 ? Autrement dit : la simulation GAMA, une fois lancée,
-reproduira-t-elle les mesures du pipeline Python, ou bien la transcription
-en GAML a-t-elle introduit un écart ?
-
-Pourquoi un oracle plutôt qu'un lancement de GAMA
---------------------------------------------------
-GAMA n'est pas pilotable depuis cet environnement. Mais l'essentiel du risque
-n'est pas dans GAMA : il est dans la TRANSCRIPTION du métier — seuils de
-signatures exprimés en unités réelles alors que le vecteur est normalisé,
-formule de fusion, gestion de l'abstention, indices de la matrice de
-confusion. Ce fichier réimplémente ces quatre points EXACTEMENT comme le GAML
-les exprime, ligne à ligne, et mesure le résultat sur KDDTest+ entier.
-
-Un écart ici est un défaut du code métier. Une correspondance ici ne garantit
-pas que GAMA compilera, mais garantit que s'il compile, il calculera juste.
-
-Correspondance ligne à ligne avec les zones protégées de ids_sma.gaml :
     signatures_rm1_rm11           -> evaluer_signatures()
     calcul_utilite                -> utilite()
     mise_a_jour_matrice_confusion -> mettre_a_jour()
+
+GAMA n'est pas lancé. L'écart mesuré ici vient de cette transcription
+(seuils, fusion, abstention, indices de la matrice).
 """
 import json
 import os
@@ -122,14 +104,9 @@ def utilite(c_ia, c_rg, degrade, a_ia, poids_ia, lambda_fp, menace):
 # Transcription de la zone mise_a_jour_matrice_confusion
 # ==========================================================================
 def metriques(mc):
-    """
-    DEUX exactitudes, et il faut les nommer separement.
+    """Exactitude à 5 classes et exactitude binaire (attaque / normal).
 
-    Le rapport de l'Etape 3 employait le mot « exactitude » pour la mesure
-    BINAIRE dans son tableau de fusion et pour la mesure a CINQ CLASSES
-    ailleurs. La confusion masquait le defaut trouve a l'Etape 6 : la fusion
-    ameliore la detection binaire tout en degradant l'attribution de classe.
-    Une erreur DoS -> PROBE reste une detection correcte en binaire.
+    DoS classé PROBE compte comme une erreur à 5 classes et comme un vrai positif binaire.
     """
     total = int(mc.sum())
     bons = int(sum(mc[k][k] for k in range(NB)))
