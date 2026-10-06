@@ -1,21 +1,11 @@
 #!/usr/bin/env python3
-"""
-Générateur PSM -> GAML.
+"""PSM vers GAML.
 
-    python3 generer.py [--backend auto|pyecore|stdlib] [--forcer] [--verifier]
+    python generer.py [--backend auto|pyecore|stdlib] [--forcer] [--verifier]
 
-Chaîne complète :
-
-    psm/gaml-psm.ecore  ──┐
-                             ├─> chargeur.py ─> graphe de Noeud ─┐
-    psm/psm-ids-complet.xmi ┘                                 │
-                                                                 ├─> Jinja2 ─> ids_sma.gaml
-    ml/artifacts/foret_export.json ─> transpileur_foret.py ─> table CSV ─┘
-                                                    └─> cascade INLINE
-
-Le générateur ne contient aucune connaissance du métier ni de la syntaxe
-GAML : le métier est dans le modèle, la syntaxe est dans les gabarits. Ce
-fichier n'orchestre que le passage de l'un à l'autre.
+gaml-psm.ecore et psm-ids-complet.xmi passent par chargeur.py.
+Les gabarits Jinja2 écrivent le GAML. foret_export.json passe
+par transpileur_foret.py (CSV ou cascade if/else).
 """
 import argparse
 import datetime
