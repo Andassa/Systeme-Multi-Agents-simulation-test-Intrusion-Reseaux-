@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Écrit psm/psm-ids-complet.xmi à partir des diagrammes PIM (PlantUML).
-
-Le PIM n'est pas un modèle Ecore : la transformation est codée ici, pas calculée.
-classePim, butPim et contratPim sont recopiés dans l'instance.
-"""
+"""Écrit psm/psm-ids-complet.xmi depuis les diagrammes PIM."""
 import os
 import xml.etree.ElementTree as ET
 
@@ -16,9 +12,6 @@ NS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
 NS_XMI = "http://www.omg.org/XMI"
 
 
-# ==========================================================================
-# Fabriques d'éléments — une par concept du métamodèle
-# ==========================================================================
 def el(parent, tag, type_=None, identifiable=False, **attrs):
     e = ET.SubElement(parent, tag)
     if type_:
@@ -103,9 +96,6 @@ def ecrire(parent, expression, balise="corps", commentaire=None):
               commentaire=commentaire)
 
 
-# ==========================================================================
-# T-1 / T-2 / T-3 : projection des trois classes d'agent du PIM
-# ==========================================================================
 ARCHITECTURE = {
     "AgentReactif": "REFLEX",
     "AgentBaseModele": "FSM",
@@ -121,9 +111,6 @@ def espece(racine, nom, classe_pim, **kw):
               classePim=classe_pim, **kw)
 
 
-# ==========================================================================
-# SECTION GLOBALE
-# ==========================================================================
 def construire_global(racine):
     g = el(racine, "sectionGlobale")
 
@@ -210,9 +197,6 @@ def construire_global(racine):
     return g
 
 
-# ==========================================================================
-# LES SEPT AGENTS
-# ==========================================================================
 ESPECES = [
     ("AgentCapture", "AgentReactif::AgentCapture"),
     ("AgentExtraction", "AgentReactif::AgentExtraction"),
@@ -606,9 +590,6 @@ def agent_journal(racine):
     return s
 
 
-# ==========================================================================
-# EXPÉRIENCE
-# ==========================================================================
 def construire_experience(racine):
     x = el(racine, "experiences", nom="ids_gui", type="GUI", repetitions="1")
 
@@ -646,7 +627,6 @@ def construire_experience(racine):
     return x
 
 
-# ==========================================================================
 def construire():
     ET.register_namespace("gamlpsm", NS_PSM)
     ET.register_namespace("xsi", NS_XSI)
