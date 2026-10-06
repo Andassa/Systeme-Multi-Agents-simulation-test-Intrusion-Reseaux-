@@ -1,0 +1,627 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Métamodèle PSM — sous-ensemble restreint de GAML (GAMA Platform 2025.6.4)
+  Projet : IDS multi-agents, chaîne IDM CIM -> PIM -> PSM -> GAML
+
+  Périmètre (ADR-04) : ce métamodèle ne décrit QUE les constructions GAML
+  effectivement produites par le générateur de l'Étape 5. Il n'ambitionne pas
+  de couvrir GAML. Un métamodèle exhaustif serait une recopie de la grammaire
+  de la plateforme, donc un PSM « photocopie » sans valeur de conception.
+
+  Toute construction absente d'ici est, par définition, non générable.
+-->
+<ecore:EPackage xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore"
+    name="gamlpsm"
+    nsURI="http://ids-sma-idm.org/psm/gaml/1.0"
+    nsPrefix="gamlpsm">
+
+  <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+    <details key="documentation"
+      value="PSM cible GAMA 2025.6.4. Les faits de plateforme sur lesquels ce métamodèle s'appuie sont consignés dans 03-psm/00-GAMA-2025-06-FAITS-VERIFIES.md."/>
+  </eAnnotations>
+
+  <!-- ==================================================================
+       RACINE
+       ================================================================== -->
+
+  <eClassifiers xsi:type="ecore:EClass" name="GamlModel">
+    <eAnnotations source="doc">
+      <details key="gaml" value="model &lt;nom&gt;"/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nom" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="auteur"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="description"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="imports" upperBound="-1"
+        eType="#//Import" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="sectionGlobale"
+        eType="#//GlobalSection" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="especes" upperBound="-1"
+        eType="#//Species" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="experiences" upperBound="-1"
+        eType="#//Experiment" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="ressources" upperBound="-1"
+        eType="#//ClassifierResource" containment="true"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Import">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="chemin" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="GlobalSection">
+    <eAnnotations source="doc">
+      <details key="gaml" value="global { ... }"/>
+      <details key="pim" value="Environnement partagé (CIM EF8)"/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="attributs" upperBound="-1"
+        eType="#//Attribute" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="actions" upperBound="-1"
+        eType="#//Action" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="reflexes" upperBound="-1"
+        eType="#//Reflex" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="initialisation" upperBound="-1"
+        eType="#//Statement" containment="true"/>
+  </eClassifiers>
+
+  <!-- ==================================================================
+       ESPÈCES
+       ================================================================== -->
+
+  <eClassifiers xsi:type="ecore:EClass" name="Species">
+    <eAnnotations source="doc">
+      <details key="gaml" value="species &lt;nom&gt; control: &lt;architecture&gt; skills: [...] { ... }"/>
+    </eAnnotations>
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore">
+      <details key="constraints" value="UneSeuleLectureParBoite ArchitectureCoherenteAvecCorps ParentNonCyclique"/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nom" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="architecture" lowerBound="1"
+        eType="#//ArchitectureKind" defaultValueLiteral="REFLEX"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="skills" upperBound="-1"
+        eType="#//SkillKind"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nbInstances"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="1"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="classePim"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString">
+      <eAnnotations source="doc">
+        <details key="role" value="Traçabilité descendante : nom de la classe PIM d'origine. Renseigné par la transformation, jamais saisi à la main."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="parent" eType="#//Species"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="attributs" upperBound="-1"
+        eType="#//Attribute" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="reflexes" upperBound="-1"
+        eType="#//Reflex" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="actions" upperBound="-1"
+        eType="#//Action" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="etats" upperBound="-1"
+        eType="#//State" containment="true">
+      <eAnnotations source="doc">
+        <details key="contrainte" value="non vide si et seulement si architecture = FSM"/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="taches" upperBound="-1"
+        eType="#//Task" containment="true">
+      <eAnnotations source="doc">
+        <details key="contrainte" value="non vide si et seulement si architecture = WEIGHTED_TASKS"/>
+      </eAnnotations>
+    </eStructuralFeatures>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Attribute">
+    <eAnnotations source="doc">
+      <details key="gaml" value="&lt;type&gt; &lt;nom&gt; &lt;- &lt;init&gt;;   ou   parameter &quot;...&quot; var: &lt;nom&gt; min: .. max: ..;"/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nom" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="type" lowerBound="1"
+        eType="#//GamlType"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="typeElement" eType="#//GamlType">
+      <eAnnotations source="doc">
+        <details key="role" value="type paramétrique pour LIST et MAP : list&lt;float&gt;"/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="initialisation"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="estParametre"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="libelle"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="minimum"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="maximum"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="categorie"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="commentaire"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <!-- ==================================================================
+       COMPORTEMENTS
+       ================================================================== -->
+
+  <eClassifiers xsi:type="ecore:EClass" name="Reflex">
+    <eAnnotations source="doc">
+      <details key="gaml" value="reflex &lt;nom&gt; when: &lt;condition&gt; { ... }"/>
+      <details key="critique" value="L'attribut boiteLue porte la contrainte de plateforme la plus structurante du projet (cf. §2.1 des faits vérifiés) : lire contents retire le message de TOUTES les listes."/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nom" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="condition"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="boiteLue" lowerBound="1"
+        eType="#//MailboxKind" defaultValueLiteral="AUCUNE"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="ordre" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt">
+      <eAnnotations source="doc">
+        <details key="role" value="Rang d'émission dans le fichier généré. Impose un ordre déterministe (exigence ENF5 : reproductibilité). GAMA exécute les reflex dans l'ordre de déclaration."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="corps" upperBound="-1"
+        eType="#//Statement" containment="true"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Action">
+    <eAnnotations source="doc">
+      <details key="gaml" value="&lt;typeRetour&gt; &lt;nom&gt; (&lt;params&gt;) { ... }   ou   action &lt;nom&gt; (...) { ... }"/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nom" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="typeRetour" eType="#//GamlType"
+        defaultValueLiteral="UNKNOWN"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="typeElement" eType="#//GamlType">
+      <eAnnotations source="doc">
+        <details key="role" value="Type paramétrique du retour LIST/MAP : list&lt;float&gt;"/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="parametres" upperBound="-1"
+        eType="#//Parameter" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="corps" upperBound="-1"
+        eType="#//Statement" containment="true"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Parameter">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nom" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="type" lowerBound="1"
+        eType="#//GamlType"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="typeElement" eType="#//GamlType">
+      <eAnnotations source="doc">
+        <details key="role" value="Type paramétrique pour LIST et MAP : list&lt;float&gt;"/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="valeurDefaut"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <!-- Architecture FSM : projection de la machine à états du PIM -->
+  <eClassifiers xsi:type="ecore:EClass" name="State">
+    <eAnnotations source="doc">
+      <details key="gaml" value="state &lt;nom&gt; initial: true { enter { } ... transition to: X when: c; }"/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nom" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="estInitial"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="estFinal"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="boiteLue"
+        eType="#//MailboxKind" defaultValueLiteral="AUCUNE">
+      <eAnnotations source="doc">
+        <details key="role" value="Boîte lue par le corps de cet état. Ajouté à l'Étape 6 : la lecture des messages d'un agent à états appartient à ses états, non à un reflex. Deux états peuvent lire la même boîte sans violer C1, puisqu'un seul état est actif à la fois — l'exclusivité est garantie par la FSM elle-même, pas par une convention."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="corpsEntree" upperBound="-1"
+        eType="#//Statement" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="corps" upperBound="-1"
+        eType="#//Statement" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="corpsSortie" upperBound="-1"
+        eType="#//Statement" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="transitions" upperBound="-1"
+        eType="#//Transition" containment="true"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Transition">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="cible" lowerBound="1"
+        eType="#//State"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="condition" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="evenementPim"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <!-- Architecture WEIGHTED_TASKS : projection de l'agent à base de buts -->
+  <eClassifiers xsi:type="ecore:EClass" name="Task">
+    <eAnnotations source="doc">
+      <details key="gaml" value="task &lt;nom&gt; weight: &lt;expression&gt; { ... }"/>
+      <details key="pim" value="Une tâche = une action candidate de l'agent à base de buts. Le poids EST la fonction d'utilité U(a). GAMA recalcule tous les poids à chaque pas et exécute le maximum : c'est argmax_a U(a), sans adaptation."/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nom" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="expressionPoids" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="butPim"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString">
+      <eAnnotations source="doc">
+        <details key="role" value="Identifiant du but G1..G4 dont cette tâche est la réalisation. Traçabilité vers le Modèle Conceptuel §9."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="corps" upperBound="-1"
+        eType="#//Statement" containment="true"/>
+  </eClassifiers>
+
+  <!-- ==================================================================
+       INSTRUCTIONS — jeu fermé (ADR-04)
+       ================================================================== -->
+
+  <eClassifiers xsi:type="ecore:EClass" name="Statement" abstract="true">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="commentaire"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Affectation" eSuperTypes="#//Statement">
+    <eAnnotations source="doc"><details key="gaml" value="&lt;cible&gt; &lt;- &lt;expression&gt;;"/></eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="cible" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="expression" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="declaration"
+        eType="#//GamlType">
+      <eAnnotations source="doc">
+        <details key="role" value="Si renseigné, l'affectation déclare une variable locale : &lt;type&gt; &lt;cible&gt; &lt;- ..."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="typeElement" eType="#//GamlType">
+      <eAnnotations source="doc">
+        <details key="role" value="Type paramétrique de la déclaration LIST/MAP : list&lt;float&gt;"/>
+      </eAnnotations>
+    </eStructuralFeatures>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Conditionnelle" eSuperTypes="#//Statement">
+    <eAnnotations source="doc"><details key="gaml" value="if (c) { ... } else { ... }"/></eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="condition" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="alors" upperBound="-1"
+        eType="#//Statement" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="sinon" upperBound="-1"
+        eType="#//Statement" containment="true"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Boucle" eSuperTypes="#//Statement">
+    <eAnnotations source="doc"><details key="gaml" value="loop &lt;var&gt; over: &lt;collection&gt; { ... }   |   loop while: &lt;cond&gt; { ... }"/></eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="variable"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="collection"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="conditionTantQue"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="corps" upperBound="-1"
+        eType="#//Statement" containment="true"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Ask" eSuperTypes="#//Statement">
+    <eAnnotations source="doc"><details key="gaml" value="ask &lt;cible&gt; { ... }"/></eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="cible" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="corps" upperBound="-1"
+        eType="#//Statement" containment="true"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="AppelAction" eSuperTypes="#//Statement">
+    <eAnnotations source="doc"><details key="gaml" value="do &lt;nom&gt; arg1: v1 ...;"/></eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nom" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="arguments" upperBound="-1"
+        eType="#//Argument" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="resultatDans"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="typeResultat"
+        eType="#//GamlType">
+      <eAnnotations source="doc">
+        <details key="role" value="Type de la variable recevant le résultat, quand l'appel la déclare : `list p &lt;- evaluer_signatures(v: …);`"/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="typeElement" eType="#//GamlType">
+      <eAnnotations source="doc">
+        <details key="role" value="Type paramétrique du résultat LIST/MAP : list&lt;float&gt;"/>
+      </eAnnotations>
+    </eStructuralFeatures>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Argument">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nom" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="expression" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="CommunicationFipa" eSuperTypes="#//Statement">
+    <eAnnotations source="doc">
+      <details key="gaml" value="do start_conversation to: [..] protocol: '..' performative: '..' contents: [..];  |  do reply message: m performative: '..' contents: [..];"/>
+      <details key="pim" value="Projection directe des contrats de messages P1..P5."/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="genre" lowerBound="1"
+        eType="#//FipaCallKind"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="performatif" lowerBound="1"
+        eType="#//Performative"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="protocole"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString">
+      <eAnnotations source="doc">
+        <details key="risque" value="Les valeurs légales de la facet protocol: ne sont PAS confirmées par la documentation 2025-06. Cet attribut est une chaîne libre et non une énumération, précisément pour qu'une correction éventuelle porte sur les instances du modèle et non sur le métamodèle."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="destinataires"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="contenus" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="messageSource"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString">
+      <eAnnotations source="doc">
+        <details key="contrainte" value="obligatoire si genre = REPLY, interdit si genre = START_CONVERSATION"/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="contratPim"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString">
+      <eAnnotations source="doc"><details key="role" value="P1..P5"/></eAnnotations>
+    </eStructuralFeatures>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Retour" eSuperTypes="#//Statement">
+    <eAnnotations source="doc">
+      <details key="gaml" value="return &lt;expression&gt;;"/>
+      <details key="origine" value="Ajouté à l'Étape 6. Le métamodèle initial ne permettait pas à une Action de renvoyer une valeur : les actions générées calculaient un résultat et ne le rendaient jamais. Défaut invisible tant que le GAML n'était pas exécuté."/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="expression"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Ecriture" eSuperTypes="#//Statement">
+    <eAnnotations source="doc"><details key="gaml" value="write &lt;expression&gt;;"/></eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="expression" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Creation" eSuperTypes="#//Statement">
+    <eAnnotations source="doc"><details key="gaml" value="create &lt;espece&gt; number: n { ... }"/></eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="espece" lowerBound="1"
+        eType="#//Species"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nombre"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        defaultValueLiteral="1"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="initialisations" upperBound="-1"
+        eType="#//Argument" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="retourDans"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="ZoneProtegee" eSuperTypes="#//Statement">
+    <eAnnotations source="doc">
+      <details key="gaml" value="// @user-begin(&lt;identifiant&gt;) ... // @user-end(&lt;identifiant&gt;)"/>
+      <details key="adr" value="ADR-05. Frontière entre code généré et code métier complété à la main. Le générateur relit le fichier existant, extrait le contenu entre marqueurs et le réinjecte : une régénération ne détruit pas le travail manuel."/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="identifiant" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="contenuParDefaut"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="intention"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString">
+      <eAnnotations source="doc">
+        <details key="role" value="Description, émise en commentaire, de ce que le développeur doit écrire ici. Une zone protégée sans intention est une dette non documentée."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="ParcoursClassifieur" eSuperTypes="#//Statement">
+    <eAnnotations source="doc">
+      <details key="adr" value="ADR-03 bis. Cette instruction est le point de variation de la double génération : la MÊME instance de modèle produit soit un parcours de table, soit une cascade if/else, selon ClassifierResource.strategieGeneration."/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="ressource" lowerBound="1"
+        eType="#//ClassifierResource"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="vecteurEntree" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="distributionSortie" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="ExpressionBrute" eSuperTypes="#//Statement">
+    <eAnnotations source="doc">
+      <details key="avertissement" value="Échappatoire. Chaque usage est une construction GAML que le métamodèle ne sait pas décrire, donc une dette de modélisation. L'attribut justification est obligatoire : le générateur émet un décompte des ExpressionBrute en fin de génération, et ce décompte est un indicateur de qualité du PSM. Une valeur élevée signifierait que le métamodèle est sous-dimensionné et que la chaîne IDM est contournée."/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="texte" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="justification" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <!-- ==================================================================
+       RESSOURCE CLASSIFIEUR (ADR-03 bis)
+       ================================================================== -->
+
+  <eClassifiers xsi:type="ecore:EClass" name="ClassifierResource">
+    <eAnnotations source="doc">
+      <details key="role" value="Représente la forêt aléatoire entraînée à l'Étape 5 comme un élément de MODÈLE, non comme un fichier externe. C'est ce qui fait entrer le volet Machine Learning dans la chaîne IDM au lieu de le laisser à côté."/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nom" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="cheminSource" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        defaultValueLiteral="../05-ml/foret_export.json"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="strategieGeneration" lowerBound="1"
+        eType="#//GenerationStrategy"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="cheminTableGeneree"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nbArbres"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="profondeurMax"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nbNoeuds"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nbCaracteristiques"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="122"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nbClasses"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="5"/>
+  </eClassifiers>
+
+  <!-- ==================================================================
+       EXPÉRIENCES ET SORTIES
+       ================================================================== -->
+
+  <eClassifiers xsi:type="ecore:EClass" name="Experiment">
+    <eAnnotations source="doc"><details key="gaml" value="experiment &lt;nom&gt; type: gui { ... }"/></eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nom" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="type" lowerBound="1"
+        eType="#//ExperimentKind" defaultValueLiteral="GUI"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="repetitions"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="1"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="parametres" upperBound="-1"
+        eType="#//Attribute" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="sorties" upperBound="-1"
+        eType="#//Output" containment="true"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Output" abstract="true">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nom" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Display" eSuperTypes="#//Output">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="rafraichissement"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="couches" upperBound="-1"
+        eType="#//Layer" containment="true"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Monitor" eSuperTypes="#//Output">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="expression" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Layer" abstract="true">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nom"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="ChartLayer" eSuperTypes="#//Layer">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="typeGraphe" lowerBound="1"
+        eType="#//ChartKind"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="series" upperBound="-1"
+        eType="#//Series" containment="true"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="SpeciesLayer" eSuperTypes="#//Layer">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="espece" lowerBound="1"
+        eType="#//Species"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="aspect"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Series">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nom" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="expression" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="couleur"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <!-- ==================================================================
+       ÉNUMÉRATIONS
+       ================================================================== -->
+
+  <eClassifiers xsi:type="ecore:EEnum" name="ArchitectureKind">
+    <eAnnotations source="doc">
+      <details key="restriction" value="GAMA 2025.6.4 en propose onze. Trois seulement sont retenues : celles sur lesquelles se projettent les trois classes d'agent du PIM. Les huit autres (simple_bdi, parallel_bdi, rules, sorted_tasks, probabilistic_tasks, user_first, user_last, user_only) sont volontairement hors périmètre — les inclure sans les employer produirait un métamodèle décoratif."/>
+    </eAnnotations>
+    <eLiterals name="REFLEX" value="0" literal="reflex"/>
+    <eLiterals name="FSM" value="1" literal="fsm"/>
+    <eLiterals name="WEIGHTED_TASKS" value="2" literal="weighted_tasks"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EEnum" name="SkillKind">
+    <eLiterals name="FIPA" value="0" literal="fipa"/>
+    <eLiterals name="MESSAGING" value="1" literal="messaging"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EEnum" name="GamlType">
+    <eLiterals name="INT" value="0" literal="int"/>
+    <eLiterals name="FLOAT" value="1" literal="float"/>
+    <eLiterals name="BOOL" value="2" literal="bool"/>
+    <eLiterals name="STRING" value="3" literal="string"/>
+    <eLiterals name="LIST" value="4" literal="list"/>
+    <eLiterals name="MAP" value="5" literal="map"/>
+    <eLiterals name="MATRIX" value="6" literal="matrix"/>
+    <eLiterals name="AGENT" value="7" literal="agent"/>
+    <eLiterals name="MESSAGE" value="8" literal="message"/>
+    <eLiterals name="FILE" value="9" literal="file"/>
+    <eLiterals name="PAIR" value="10" literal="pair"/>
+    <eLiterals name="UNKNOWN" value="11" literal="unknown"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EEnum" name="MailboxKind">
+    <eAnnotations source="doc">
+      <details key="role" value="Boîte aux lettres lue par un Reflex. Support de la contrainte UneSeuleLectureParBoite."/>
+    </eAnnotations>
+    <eLiterals name="AUCUNE" value="0" literal="-"/>
+    <eLiterals name="INFORMS" value="1" literal="informs"/>
+    <eLiterals name="QUERIES" value="2" literal="queries"/>
+    <eLiterals name="REQUESTS" value="3" literal="requests"/>
+    <eLiterals name="REFUSES" value="4" literal="refuses"/>
+    <eLiterals name="FAILURES" value="5" literal="failures"/>
+    <eLiterals name="AGREES" value="6" literal="agrees"/>
+    <eLiterals name="PROPOSES" value="7" literal="proposes"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EEnum" name="Performative">
+    <eLiterals name="INFORM" value="0" literal="inform"/>
+    <eLiterals name="QUERY" value="1" literal="query"/>
+    <eLiterals name="REQUEST" value="2" literal="request"/>
+    <eLiterals name="REFUSE" value="3" literal="refuse"/>
+    <eLiterals name="FAILURE" value="4" literal="failure"/>
+    <eLiterals name="AGREE" value="5" literal="agree"/>
+    <eLiterals name="PROPOSE" value="6" literal="propose"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EEnum" name="FipaCallKind">
+    <eLiterals name="START_CONVERSATION" value="0" literal="start_conversation"/>
+    <eLiterals name="REPLY" value="1" literal="reply"/>
+    <eLiterals name="END_CONVERSATION" value="2" literal="end_conversation"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EEnum" name="ExperimentKind">
+    <eLiterals name="GUI" value="0" literal="gui"/>
+    <eLiterals name="BATCH" value="1" literal="batch"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EEnum" name="ChartKind">
+    <eLiterals name="SERIES" value="0" literal="series"/>
+    <eLiterals name="HISTOGRAM" value="1" literal="histogram"/>
+    <eLiterals name="PIE" value="2" literal="pie"/>
+    <eLiterals name="XY" value="3" literal="xy"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EEnum" name="GenerationStrategy">
+    <eAnnotations source="doc">
+      <details key="adr" value="ADR-03 bis. TABLE : table de nœuds + parcours itératif, cible d'exécution. INLINE : cascade if/else lisible, cible de démonstration."/>
+    </eAnnotations>
+    <eLiterals name="TABLE" value="0" literal="table"/>
+    <eLiterals name="INLINE" value="1" literal="inline"/>
+  </eClassifiers>
+
+</ecore:EPackage>

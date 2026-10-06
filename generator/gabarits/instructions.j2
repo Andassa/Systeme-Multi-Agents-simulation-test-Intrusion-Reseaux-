@@ -1,0 +1,187 @@
+{#-
+  Macros de rendu des instructions GAML.
+
+  Le rendu est intégralement ici, dans les gabarits, et non en Python : c'est
+  la séparation qui rend la chaîne remplaçable. Changer de plateforme cible
+  reviendrait à réécrire ce fichier, sans toucher au chargeur, au modèle ni
+  au métamodèle.
+
+  `bloc` est récursive : Conditionnelle, Boucle et Ask contiennent des
+  instructions, qui peuvent à leur tour en contenir.
+-#}
+
+{%- macro bloc(instructions, n) -%}
+{%- for s in instructions %}{{ instruction(s, n) }}{% endfor -%}
+{%- endmacro -%}
+
+
+{%- macro instruction(s, n) -%}
+{%- set p = '    ' * n -%}
+{%- if s.commentaire %}
+{{ p }}// {{ s.commentaire | envelopper(n) }}
+{%- endif -%}
+
+{%- if s.classe == 'Affectation' %}
+{{ p }}{% if s.declaration %}{{ s.declaration }}{% if s.typeElement %}<{{ s.typeElement }}>{% endif %} {% endif %}{{ s.cible }} <- {{ s.expression }};
+{%- elif s.classe == 'Conditionnelle' %}
+{{ p }}if ({{ s.condition }}) {
+{{- bloc(s.liste('alors'), n + 1) }}
+{%- if s.liste('sinon') %}
+{{ p }}} else {
+{{- bloc(s.liste('sinon'), n + 1) }}
+{%- endif %}
+{{ p }}}
+{%- elif s.classe == 'Boucle' %}
+{%- if s.conditionTantQue %}
+{{ p }}loop while: {{ s.conditionTantQue }} {
+{%- else %}
+{{ p }}loop {{ s.variable }} over: {{ s.collection }} {
+{%- endif %}
+{{- bloc(s.liste('corps'), n + 1) }}
+{{ p }}}
+{%- elif s.classe == 'Ask' %}
+{{ p }}ask {{ s.cible }} {
+{{- bloc(s.liste('corps'), n + 1) }}
+{{ p }}}
+{%- elif s.classe == 'AppelAction' %}
+{#- Doc 2025-06 « Defining actions and behaviors » : une action à valeur de
+    retour s'appelle SANS `do`, en affectant directement le résultat. La forme
+    `let x <- self action(...)` émise auparavant était fausse sur deux points :
+    `let` n'est pas le mot-clé d'affectation, et `self` ne s'applique pas à
+    une action de l'agent courant. -#}
+{#- Appels positionnels : les facettes nommées (arg: val) provoquent
+    ParameterImpl/builtInFacetKey null sur les actions importées (GAMA 2025.6).
+    Actions du global (y compris importé) : préfixer le nom par `world.`
+    depuis une espèce — cf. GAMA discussion #821 (février 2026). -#}
+{{ p }}{% if s.resultatDans %}{% if s.typeResultat %}{{ s.typeResultat }}{% if s.typeElement %}<{{ s.typeElement }}>{% endif %} {% endif %}{{ s.resultatDans }} <- {{ s.nom }}(
+{%- for a in s.liste('arguments') %}{{ a.expression }}{% if not loop.last %}, {% endif %}{% endfor %});
+{%- else %}do {{ s.nom }}(
+{%- for a in s.liste('arguments') %}{{ a.expression }}{% if not loop.last %}, {% endif %}{% endfor %});
+{%- endif %}
+{%- elif s.classe == 'Retour' %}
+{{ p }}return{% if s.expression %} {{ s.expression }}{% endif %};
+{%- elif s.classe == 'CommunicationFipa' %}
+{%- if s.genre == 'start_conversation' %}
+{{ p }}do start_conversation to: {{ s.destinataires }} protocol: {{ s.protocole }} performative: '{{ s.performatif }}' contents: {{ s.contenus }};
+{%- elif s.genre == 'reply' %}
+{#- Doc 2025-06 « Using FIPA ACL » : « `reply` should be ONLY used to reply a
+    message in a 'no-protocol' conversation and with a 'user-defined
+    performative'. For performatives supported by GAMA, please use the
+    'action' with the same name as the 'performative'. »
+    On émet donc `do inform message: m contents: [...]` et non
+    `do reply message: m performative: 'inform' ...`. -#}
+{{ p }}do {{ s.performatif }} message: {{ s.messageSource }} contents: {{ s.contenus }};
+{%- else %}
+{{ p }}do end_conversation message: {{ s.messageSource }} contents: {{ s.contenus }};
+{%- endif %}
+{%- elif s.classe == 'Ecriture' %}
+{%- if s.expression != 'nil' %}
+{{ p }}write {{ s.expression }};
+{%- endif %}
+{%- elif s.classe == 'Creation' %}
+{{ p }}create {{ s.espece | sansdiese }}{% if s.nombre and s.nombre != '1' %} number: {{ s.nombre }}{% endif %}
+{%- if s.retourDans %} returns: {{ s.retourDans }}{% endif %}
+{%- if s.liste('initialisations') %} {
+{%- for a in s.liste('initialisations') %}
+{{ p }}    {{ a.nom }} <- {{ a.expression }};
+{%- endfor %}
+{{ p }}}
+{%- else %};
+{%- endif %}
+{%- elif s.classe == 'ZoneProtegee' %}
+{{ zone_protegee(s, n) }}
+{%- elif s.classe == 'ParcoursClassifieur' %}
+{{ parcours(s, n) }}
+{%- elif s.classe == 'ExpressionBrute' %}
+{{ p }}{{ s.texte }}   // BRUT : {{ s.justification }}
+{%- else %}
+{{ p }}// INSTRUCTION NON PRISE EN CHARGE : {{ s.classe }}
+{%- endif -%}
+{%- endmacro -%}
+
+
+{#- ADR-05 : frontière génération / complétion.
+    Le contenu entre les marqueurs est relu dans le fichier existant et
+    réinjecté à chaque régénération. Le générateur ne l'écrase jamais. -#}
+{#- L'intention est écrite AVANT le marqueur d'ouverture, jamais à l'intérieur.
+    Placée dans la zone, elle était relue comme du contenu utilisateur et
+    réinjectée à chaque génération : le commentaire se dupliquait à chaque
+    passage. Défaut détecté à la deuxième régénération, pas à la première —
+    d'où le test de cycle dans verifier_cycle.py. -#}
+{%- macro zone_protegee(s, n) -%}
+{%- set p = '    ' * n %}
+{{ p }}// À COMPLÉTER — {{ s.intention | envelopper(n) }}
+{{ p }}// @user-begin({{ s.identifiant }})
+{{ p }}{{ (zones.get(s.identifiant) or s.contenuParDefaut or '// à compléter') | indent(n * 4) }}
+{{ p }}// @user-end({{ s.identifiant }})
+{%- endmacro -%}
+
+
+{#- ADR-03 bis : point de variation de la double génération. -#}
+{%- macro parcours(s, n) -%}
+{%- set p = '    ' * n -%}
+{%- set res = ressources[s.ressource | sansdiese] %}
+{%- if res.strategieGeneration == 'table' %}
+{{ p }}// forêt {{ res.nom }} — parcours de table ({{ res.nbArbres }} arbres, {{ res.nbNoeuds }} nœuds)
+{{ p }}loop __r over: racines_foret {
+{{ p }}    int __n <- __r;
+{{ p }}    loop while: (int(table_foret[0, __n]) >= 0) {
+{{ p }}        __n <- (float({{ s.vecteurEntree }}[int(table_foret[0, __n])]) <= float(table_foret[1, __n]))
+{{ p }}               ? int(table_foret[2, __n]) : int(table_foret[3, __n]);
+{{ p }}    }
+{{ p }}    loop __k from: 0 to: NB_CLASSES - 1 {
+{{ p }}        {{ s.distributionSortie }}[__k] <- {{ s.distributionSortie }}[__k] + float(table_foret[4 + __k, __n]);
+{{ p }}    }
+{{ p }}}
+{{ p }}loop __k from: 0 to: NB_CLASSES - 1 {
+{{ p }}    {{ s.distributionSortie }}[__k] <- {{ s.distributionSortie }}[__k] / length(racines_foret);
+{{ p }}}
+{%- else %}
+{{ p }}// forêt {{ res.nom }} — cascade lisible ({{ res.nbArbres }} arbres, profondeur {{ res.profondeurMax }})
+{{ p }}// ATTENTION : sous-forêt réduite. Modèle DIFFÉRENT du modèle de production,
+{{ p }}// moins performant. Cible de lecture, pas d'exécution.
+{{ cascades[res.nom] }}
+{{ p }}loop __k from: 0 to: NB_CLASSES - 1 {
+{{ p }}    {{ s.distributionSortie }}[__k] <- {{ s.distributionSortie }}[__k] / {{ res.nbArbres }};
+{{ p }}}
+{%- endif -%}
+{%- endmacro -%}
+
+
+{%- macro declaration_attribut(a, n) -%}
+{%- set p = '    ' * n -%}
+{%- set t = a.type + ('<' + a.typeElement + '>' if a.typeElement else '') -%}
+{%- if a.commentaire %}
+{{ p }}// {{ a.commentaire | envelopper(n) }}
+{%- endif %}
+{{ p }}{{ t }} {{ a.nom }}{% if a.initialisation %} <- {{ a.initialisation }}{% endif %};
+{%- endmacro -%}
+
+{#- Doc 2025-06 : « An action can return a value (in that case, the type of
+    return has to be specified just before the name of the action), or not
+    (in that case, you just have to put the keyword `action` before the name).»
+
+        list evaluer_signatures (list v) { ... return p; }     <- fonction
+        action journaliser (int id) { ... }                    <- procédure
+
+    Le gabarit émettait `action nom type: list (...)`. La facet `type:` n'existe
+    pas sur `action` : le type de retour se place avant le nom. -#}
+{%- macro rendre_action(act, n) -%}
+{%- set p = '    ' * n -%}
+{{ p }}{% if act.typeRetour and act.typeRetour != 'unknown' %}{{ act.typeRetour }}{% if act.typeElement %}<{{ act.typeElement }}>{% endif %}{% else %}action{% endif %} {{ act.nom }}
+{%- if act.liste('parametres') %} ({% for pa in act.liste('parametres') %}{{ pa.type }}{% if pa.typeElement %}<{{ pa.typeElement }}>{% endif %} {{ pa.nom }}{% if pa.valeurDefaut %} <- {{ pa.valeurDefaut }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}){% endif %} {
+{{- bloc(act.liste('corps'), n + 1) }}
+{{ p }}}
+{%- endmacro -%}
+
+{%- macro rendre_reflexe(r, n) -%}
+{%- set p = '    ' * n -%}
+{%- if r.boiteLue != '-' %}
+{{ p }}// C1 : unique lecteur de la file '{{ r.boiteLue }}' pour cette espèce.
+{{ p }}// Lire m.contents retire le message de TOUTES les listes : un second
+{{ p }}// réflexe sur cette file ne verrait jamais rien.
+{%- endif %}
+{{ p }}reflex {{ r.nom }}{% if r.condition %} when: {{ r.condition }}{% endif %} {
+{{- bloc(r.liste('corps'), n + 1) }}
+{{ p }}}
+{%- endmacro -%}

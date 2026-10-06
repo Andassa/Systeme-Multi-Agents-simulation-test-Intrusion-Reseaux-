@@ -1,0 +1,37 @@
+# Documentation locale (rapports d'étape, notes) — seul README.md est versionné
+*.md
+!README.md
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Sauvegardes générateur / éditeur
+*.bak
+*~
+*.swp
+
+# Déchets PyEcore / Eclipse
+.pyecore-clean-*.xml
+.DS_Store
+.idea/
+*.iml
+
+# Artefacts ML volumineux (régénérables)
+ml/artifacts/*.npz
+ml/artifacts/*.pkl
+ml/artifacts/*.npy
+ml/artifacts/donnees.npz
+
+# Sorties GAMA locales
+gama/.settings/
+gama/models/**/*.bak
+
+# Workspace Eclipse / GAMA (ne jamais versionner)
+.metadata/
+.built_in_models_*
+.gama_application_workspace
+06-gama/

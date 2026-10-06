@@ -1,0 +1,41 @@
+/**
+ * {{ res.nom }} — cible INLINE (ADR-03 bis)
+ *
+ * FICHIER GÉNÉRÉ depuis {{ res.cheminSource }}. Ne pas modifier.
+ *
+ * AVERTISSEMENT À NE PAS OMETTRE DANS LE MÉMOIRE
+ * ----------------------------------------------
+ * Ce fichier n'est PAS une autre écriture du classifieur de production.
+ * C'est une forêt RÉDUITE — {{ res.nbArbres }} arbres de profondeur {{ res.profondeurMax }},
+ * contre {{ prod.nbArbres }} arbres de profondeur {{ prod.profondeurMax }} en production.
+ * Ses prédictions diffèrent, et ses performances sont inférieures.
+ *
+ * Sa raison d'être est la lisibilité : {{ nb_lignes }} lignes qu'un lecteur peut
+ * suivre, là où la forêt de production compte {{ prod.nbNoeuds }} nœuds et ne
+ * peut être lue. Prétendre qu'il s'agit du même modèle sous deux formes se
+ * verrait à la première question du jury.
+ *
+ * Généré le : {{ horodatage }}
+ */
+model {{ res.nom | lower }}
+
+global {
+
+    /**
+     * Classifieur lisible — cascade de tests explicites.
+     *
+     * Chaque branche porte en commentaire le nom de la variable NSL-KDD
+     * testée, de sorte que la logique apprise soit lisible sans se référer
+     * à la table d'encodage.
+     */
+    list predire_demo (list<float> v) {
+        list<float> acc <- list_with({{ res.nbClasses }}, 0.0);
+
+{{ cascade }}
+
+        loop __k from: 0 to: {{ res.nbClasses }} - 1 {
+            acc[__k] <- acc[__k] / {{ res.nbArbres }};
+        }
+        return acc;
+    }
+}

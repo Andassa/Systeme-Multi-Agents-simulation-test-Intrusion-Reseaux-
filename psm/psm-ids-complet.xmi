@@ -1,0 +1,282 @@
+<?xml version='1.0' encoding='utf-8'?>
+<gamlpsm:GamlModel xmlns:gamlpsm="http://ids-sma-idm.org/psm/gaml/1.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmi:version="2.0" nom="ids_sma" auteur="Projet IDS-SMA-IDM" description="IDS multi-agents sur NSL-KDD — modèle PSM complet, produit par application des règles T-1 à T-11.">
+  <imports chemin="generated/encodage.gaml" />
+  <imports chemin="generated/foret_demo.gaml" />
+  <sectionGlobale>
+    <attributs nom="PROTOCOLE_IDS" type="STRING" initialisation="'no-protocol'" commentaire="RÉSOLU à l'Étape 6. 'no-protocol' est la seule valeur explicitement documentée avec 'fipa-propose' en 2025-06. Elle laisse le modélisateur maître de la séquence — et lui impose d'émettre end_conversation, sans quoi les conversations s'accumulent indéfiniment dans la liste 'conversations' de chaque agent." />
+    <attributs nom="CLASSES" type="LIST" initialisation="['NORMAL','DOS','PROBE','R2L','U2R']" typeElement="STRING" />
+    <attributs nom="NB_CLASSES" type="INT" initialisation="5" />
+    <attributs nom="NB_FEATURES" type="INT" initialisation="122" />
+    <attributs nom="poids_ia" type="FLOAT" initialisation="0.35" estParametre="true" libelle="Poids de la source IA" minimum="0.0" maximum="1.0" categorie="Fusion" />
+    <attributs nom="lambda_fp" type="FLOAT" initialisation="0.0" estParametre="true" libelle="Pénalité de faux positif" minimum="0.0" maximum="1.0" categorie="Fusion" />
+    <attributs nom="delai_garde" type="INT" initialisation="3" estParametre="true" libelle="Délai de garde tau (cycles)" minimum="1" maximum="20" categorie="Fusion" />
+    <attributs nom="seuil_alerte" type="FLOAT" initialisation="0.5" estParametre="true" libelle="Seuil de gravité d'alerte" minimum="0.0" maximum="1.0" categorie="Alertes" />
+    <attributs nom="debit_capture" type="INT" initialisation="10" estParametre="true" libelle="Connexions lues par cycle" minimum="1" maximum="100" categorie="Capture" />
+    <attributs nom="capacite_file" type="INT" initialisation="200" estParametre="true" libelle="Capacité des files d'entrée (EF11)" minimum="1" maximum="500" categorie="Capture" />
+    <attributs nom="taux_panne" type="FLOAT" initialisation="0.01" estParametre="true" libelle="p_f — probabilité de panne par cycle" minimum="0.0" maximum="0.5" categorie="Pannes" />
+    <attributs nom="taux_reprise" type="FLOAT" initialisation="0.20" estParametre="true" libelle="p_r — probabilité de reprise par cycle" minimum="0.0" maximum="1.0" categorie="Pannes" />
+    <attributs nom="alpha_menace" type="FLOAT" initialisation="0.99" estParametre="true" libelle="Décroissance du niveau de menace" minimum="0.0" maximum="1.0" categorie="Menace" />
+    <attributs nom="beta_menace" type="FLOAT" initialisation="0.05" estParametre="true" libelle="Incrément par détection" minimum="0.0" maximum="1.0" categorie="Menace" />
+    <attributs nom="niveau_menace" type="FLOAT" initialisation="0.0" />
+    <attributs nom="matrice_confusion" type="LIST" initialisation="list_with(25, 0)" typeElement="INT" commentaire="ADR-07 : la simulation calcule ses propres métriques à partir de la vérité terrain portée par le dataset. Indice = 5 * classe_reelle + classe_predite." />
+    <attributs nom="nb_decisions" type="INT" initialisation="0" />
+    <attributs nom="nb_degradees" type="INT" initialisation="0" />
+    <attributs nom="nb_abandons" type="INT" initialisation="0" />
+    <attributs nom="nb_rejets_file" type="INT" initialisation="0" />
+    <attributs nom="exactitude_courante" type="FLOAT" initialisation="0.0" />
+    <attributs nom="rappel_courant" type="FLOAT" initialisation="0.0" />
+    <attributs nom="taux_fp_courant" type="FLOAT" initialisation="0.0" />
+    <attributs nom="fichier_foret" type="FILE" initialisation="csv_file('generated/foret_table.csv', ',', true)" />
+    <attributs nom="table_foret" type="MATRIX" initialisation="matrix(fichier_foret)" />
+    <attributs nom="racines_foret" type="LIST" initialisation="[]" typeElement="INT" commentaire="Rempli à l'init par le générateur — un indice par arbre." />
+    <attributs nom="fichier_donnees" type="FILE" initialisation="csv_file('data/KDDTest+.txt', ',', false)" />
+    <initialisation xsi:type="gamlpsm:Affectation" cible="racines_foret" expression="RACINES_FORET" commentaire="Généré dans generated/encodage.gaml depuis le transpileur." />
+    <initialisation xsi:type="gamlpsm:Creation" espece="#AgentCapture" nombre="1" />
+    <initialisation xsi:type="gamlpsm:Creation" espece="#AgentExtraction" nombre="1" />
+    <initialisation xsi:type="gamlpsm:Creation" espece="#AgentReglesDetection" nombre="1" />
+    <initialisation xsi:type="gamlpsm:Creation" espece="#AgentIADetection" nombre="1" />
+    <initialisation xsi:type="gamlpsm:Creation" espece="#AgentDecision" nombre="1" />
+    <initialisation xsi:type="gamlpsm:Creation" espece="#AgentAlertes" nombre="1" />
+    <initialisation xsi:type="gamlpsm:Creation" espece="#AgentJournalisation" nombre="1" />
+    <initialisation xsi:type="gamlpsm:Ecriture" expression="'IDS-SMA initialisé — ' + string(NB_FEATURES) + ' variables, ' + string(NB_CLASSES) + ' classes'" />
+  </sectionGlobale>
+  <especes nom="AgentCapture" architecture="REFLEX" skills="FIPA" classePim="AgentReactif::AgentCapture" xmi:id="AgentCapture">
+    <attributs nom="identifiant" type="STRING" initialisation="'capture'" />
+    <attributs nom="position" type="INT" initialisation="0" />
+    <attributs nom="nb_lues" type="INT" initialisation="0" />
+    <reflexes nom="lire_flux" boiteLue="AUCUNE" ordre="1" condition="position &lt; length(fichier_donnees)">
+      <corps xsi:type="gamlpsm:Boucle" variable="i" collection="range(0, debit_capture - 1)">
+        <corps xsi:type="gamlpsm:Conditionnelle" condition="position &lt; length(fichier_donnees)">
+          <alors xsi:type="gamlpsm:Affectation" cible="idc" expression="position" declaration="INT" commentaire="L'identifiant de connexion EST l'indice de la ligne dans le fichier, capturé AVANT incrémentation. La version initiale émettait nb_lues, incrémenté juste avant : l'AgentJournalisation aurait relu la ligne suivante pour récupérer l'étiquette réelle, décalant toute la matrice de confusion d'un rang sans produire la moindre erreur." />
+          <alors xsi:type="gamlpsm:Affectation" cible="ligne" expression="fichier_donnees[idc]" declaration="LIST" />
+          <alors xsi:type="gamlpsm:Affectation" cible="position" expression="position + 1" />
+          <alors xsi:type="gamlpsm:Affectation" cible="nb_lues" expression="nb_lues + 1" />
+          <alors xsi:type="gamlpsm:CommunicationFipa" genre="START_CONVERSATION" performatif="REQUEST" protocole="PROTOCOLE_IDS" destinataires="list(AgentExtraction)" contenus="['P1', idc, ligne]" contratPim="P1" />
+        </corps>
+      </corps>
+    </reflexes>
+    <reflexes nom="traiter_echecs" boiteLue="FAILURES" ordre="2" condition="!empty(failures)">
+      <corps xsi:type="gamlpsm:Boucle" variable="m" collection="copy(failures)">
+        <corps xsi:type="gamlpsm:Affectation" cible="c" expression="list(m.contents)" declaration="LIST" commentaire="C7 : contents lu une seule fois." />
+        <corps xsi:type="gamlpsm:Ecriture" expression="'[capture] echec de pretraitement : ' + string(c)" />
+      </corps>
+    </reflexes>
+  </especes>
+  <especes nom="AgentExtraction" architecture="REFLEX" skills="FIPA" classePim="AgentReactif::AgentExtraction" xmi:id="AgentExtraction">
+    <attributs nom="identifiant" type="STRING" initialisation="'extraction'" />
+    <attributs nom="vocabulaires" type="MAP" initialisation="map([])" commentaire="ADR-02 : modalités connues par variable catégorielle, issues du train. Une modalité inconnue au test produit un vecteur nul sur son bloc one-hot." />
+    <attributs nom="bornes_min" type="LIST" initialisation="[]" typeElement="FLOAT" />
+    <attributs nom="bornes_max" type="LIST" initialisation="[]" typeElement="FLOAT" />
+    <attributs nom="nb_traitees" type="INT" initialisation="0" />
+    <attributs nom="nb_modalites_inconnues" type="INT" initialisation="0" />
+    <reflexes nom="traiter_requetes" boiteLue="REQUESTS" ordre="1" condition="!empty(requests)">
+      <corps xsi:type="gamlpsm:Boucle" variable="m" collection="copy(requests)">
+        <corps xsi:type="gamlpsm:Affectation" cible="c" expression="list(m.contents)" declaration="LIST" commentaire="C7 : lecture unique." />
+        <corps xsi:type="gamlpsm:Affectation" cible="idc" expression="int(c[1])" declaration="INT" />
+        <corps xsi:type="gamlpsm:AppelAction" nom="encoder_connexion" resultatDans="v" typeResultat="LIST">
+          <arguments nom="brut" expression="list(c[2])" />
+        </corps>
+        <corps xsi:type="gamlpsm:Affectation" cible="nb_traitees" expression="nb_traitees + 1" />
+        <corps xsi:type="gamlpsm:CommunicationFipa" genre="REPLY" performatif="INFORM" protocole="PROTOCOLE_IDS" contenus="['P1', idc, v]" messageSource="m" contratPim="P1" />
+        <corps xsi:type="gamlpsm:CommunicationFipa" genre="START_CONVERSATION" performatif="INFORM" protocole="PROTOCOLE_IDS" destinataires="list(AgentDecision)" contenus="['P2', idc, v]" contratPim="P2" />
+      </corps>
+    </reflexes>
+  </especes>
+  <especes nom="AgentReglesDetection" architecture="REFLEX" skills="FIPA" classePim="AgentReactif::AgentReglesDetection" xmi:id="AgentReglesDetection">
+    <attributs nom="identifiant" type="STRING" initialisation="'regles'" />
+    <attributs nom="nb_regles" type="INT" initialisation="11" />
+    <attributs nom="nb_declenchements" type="INT" initialisation="0" />
+    <attributs nom="nb_abstentions" type="INT" initialisation="0" />
+    <actions nom="evaluer_signatures" typeRetour="LIST">
+      <parametres nom="v" type="LIST" />
+      <corps xsi:type="gamlpsm:Affectation" cible="p" expression="list_with(NB_CLASSES, 1.0 / NB_CLASSES)" declaration="LIST" commentaire="PIM §3.1 — ABSTENTION par défaut : distribution uniforme, entropie maximale. Surtout PAS 'NORMAL avec confiance 1'. Cette erreur a coûté 5 points de rappel à l'Étape 3." />
+      <corps xsi:type="gamlpsm:Affectation" cible="declenchee" expression="false" declaration="BOOL" />
+      <corps xsi:type="gamlpsm:ZoneProtegee" identifiant="signatures_rm1_rm11" intention="Évaluer les 11 signatures RM1 à RM11 du CIM §5.2 sur le vecteur v. Si une signature se déclenche : declenchee &lt;- true, p[classe] &lt;- confiance, et p[k] &lt;- (1 - confiance) / (NB_CLASSES - 1) pour les autres. Si aucune ne se déclenche, LAISSER p uniforme. Confiances = précisions KDDTrain+." contenuParDefaut="// à compléter" />
+      <corps xsi:type="gamlpsm:Conditionnelle" condition="declenchee">
+        <alors xsi:type="gamlpsm:Affectation" cible="nb_declenchements" expression="nb_declenchements + 1" />
+        <sinon xsi:type="gamlpsm:Affectation" cible="nb_abstentions" expression="nb_abstentions + 1" />
+      </corps>
+      <corps xsi:type="gamlpsm:Retour" expression="p" />
+    </actions>
+    <reflexes nom="repondre_consultations" boiteLue="QUERIES" ordre="1" condition="!empty(queries)">
+      <corps xsi:type="gamlpsm:Boucle" variable="m" collection="copy(queries)">
+        <corps xsi:type="gamlpsm:Affectation" cible="c" expression="list(m.contents)" declaration="LIST" />
+        <corps xsi:type="gamlpsm:Affectation" cible="idc" expression="int(c[1])" declaration="INT" />
+        <corps xsi:type="gamlpsm:AppelAction" nom="evaluer_signatures" resultatDans="p" typeResultat="LIST">
+          <arguments nom="v" expression="list(c[2])" />
+        </corps>
+        <corps xsi:type="gamlpsm:Affectation" cible="nature" expression="(sum(p) - NB_CLASSES * min(p)) &lt; 1e-9 ? 'ABSTENTION' : 'DETECTION'" declaration="STRING" commentaire="Distribution uniforme &lt;=&gt; abstention. Test par l'écart au minimum plutôt que par un drapeau : la propriété est portée par la distribution, pas par une variable annexe." />
+        <corps xsi:type="gamlpsm:CommunicationFipa" genre="REPLY" performatif="INFORM" protocole="PROTOCOLE_IDS" contenus="['P3', idc, ['emetteur'::'regles', 'nature'::nature, 'distribution'::p]]" messageSource="m" contratPim="P3" />
+      </corps>
+    </reflexes>
+  </especes>
+  <especes nom="AgentIADetection" architecture="FSM" skills="FIPA" classePim="AgentBaseModele::AgentIADetection" xmi:id="AgentIADetection">
+    <attributs nom="identifiant" type="STRING" initialisation="'ia'" />
+    <attributs nom="nb_predictions" type="INT" initialisation="0" />
+    <attributs nom="nb_refus_panne" type="INT" initialisation="0" />
+    <actions nom="predire" typeRetour="LIST">
+      <parametres nom="v" type="LIST" />
+      <corps xsi:type="gamlpsm:Affectation" cible="acc" expression="list_with(NB_CLASSES, 0.0)" declaration="LIST" />
+      <corps xsi:type="gamlpsm:ParcoursClassifieur" ressource="#foretNSLKDD" vecteurEntree="v" distributionSortie="acc" commentaire="ADR-03 bis — remplacé à la génération par un parcours de table (TABLE) ou une cascade if/else (INLINE)." />
+      <corps xsi:type="gamlpsm:Retour" expression="acc" />
+    </actions>
+    <etats nom="ACTIF" estInitial="true" boiteLue="QUERIES" xmi:id="ACTIF">
+      <corps xsi:type="gamlpsm:Boucle" variable="m" collection="copy(queries)">
+        <corps xsi:type="gamlpsm:Affectation" cible="c" expression="list(m.contents)" declaration="LIST" />
+        <corps xsi:type="gamlpsm:Affectation" cible="idc" expression="int(c[1])" declaration="INT" />
+        <corps xsi:type="gamlpsm:AppelAction" nom="predire" resultatDans="p" typeResultat="LIST">
+          <arguments nom="v" expression="list(c[2])" />
+        </corps>
+        <corps xsi:type="gamlpsm:Affectation" cible="nb_predictions" expression="nb_predictions + 1" />
+        <corps xsi:type="gamlpsm:CommunicationFipa" genre="REPLY" performatif="INFORM" protocole="PROTOCOLE_IDS" contenus="['P3', idc, ['emetteur'::'ia', 'nature'::'DETECTION', 'distribution'::p]]" messageSource="m" contratPim="P3" />
+      </corps>
+      <transitions cible="#EN_PANNE" condition="flip(taux_panne)" evenementPim="e11_panne" />
+    </etats>
+    <etats nom="EN_PANNE" boiteLue="QUERIES" xmi:id="EN_PANNE">
+      <corpsEntree xsi:type="gamlpsm:Ecriture" expression="'[ia] panne au cycle ' + string(cycle)" />
+      <corps xsi:type="gamlpsm:Boucle" variable="m" collection="copy(queries)">
+        <corps xsi:type="gamlpsm:Affectation" cible="c" expression="list(m.contents)" declaration="LIST" commentaire="EF10 : même en panne, l'agent consomme ses messages et REFUSE explicitement. Un agent muet laisserait l'AgentDecision attendre son délai de garde à chaque consultation — la panne coûterait tau cycles au lieu d'un." />
+        <corps xsi:type="gamlpsm:Affectation" cible="idc" expression="int(c[1])" declaration="INT" />
+        <corps xsi:type="gamlpsm:Affectation" cible="nb_refus_panne" expression="nb_refus_panne + 1" />
+        <corps xsi:type="gamlpsm:CommunicationFipa" genre="REPLY" performatif="REFUSE" protocole="PROTOCOLE_IDS" contenus="['P3', idc, 'agent en panne']" messageSource="m" contratPim="P3" />
+      </corps>
+      <transitions cible="#ACTIF" condition="flip(taux_reprise)" evenementPim="e12_reprise" />
+    </etats>
+  </especes>
+  <especes nom="AgentDecision" architecture="WEIGHTED_TASKS" skills="FIPA" classePim="AgentBaseButs::AgentDecision" xmi:id="AgentDecision">
+    <attributs nom="identifiant" type="STRING" initialisation="'decision'" />
+    <attributs nom="etatDecision" type="STRING" initialisation="'INACTIF'" commentaire="T-5 : machine à états du PIM réifiée en attribut. GAMA n'admet qu'une valeur pour control:, et weighted_tasks porte la sémantique d'agent à base de buts." />
+    <attributs nom="verdictsRecus" type="LIST" initialisation="[]" typeElement="MAP" />
+    <attributs nom="connexionCourante" type="INT" initialisation="-1" />
+    <attributs nom="vecteurCourant" type="LIST" initialisation="[]" typeElement="FLOAT" />
+    <attributs nom="cycleDebutConsultation" type="INT" initialisation="-1" />
+    <attributs nom="decisionCourante" type="MAP" initialisation="map([])" />
+    <attributs nom="nb_refus_recus" type="INT" initialisation="0" />
+    <reflexes nom="recevoir_informs" boiteLue="INFORMS" ordre="1" condition="!empty(informs)">
+      <corps xsi:type="gamlpsm:Boucle" variable="m" collection="copy(informs)">
+        <corps xsi:type="gamlpsm:Affectation" cible="c" expression="list(m.contents)" declaration="LIST" commentaire="C7 : contents lu une seule fois, puis stocké." />
+        <corps xsi:type="gamlpsm:Affectation" cible="contrat" expression="string(c[0])" declaration="STRING" commentaire="T-11 : discriminateur de contrat en tête. P2 et les réponses à P3 arrivent sur le même performatif INFORM, donc dans la même file, que C1 interdit de lire deux fois." />
+        <corps xsi:type="gamlpsm:Conditionnelle" condition="contrat = 'P2'">
+          <alors xsi:type="gamlpsm:Affectation" cible="connexionCourante" expression="int(c[1])" />
+          <alors xsi:type="gamlpsm:Affectation" cible="vecteurCourant" expression="list(c[2])" />
+          <alors xsi:type="gamlpsm:Affectation" cible="verdictsRecus" expression="[]" />
+          <alors xsi:type="gamlpsm:Affectation" cible="cycleDebutConsultation" expression="cycle" />
+          <alors xsi:type="gamlpsm:Affectation" cible="nb_refus_recus" expression="0" />
+          <alors xsi:type="gamlpsm:Affectation" cible="etatDecision" expression="'CONSULTATION'" />
+          <sinon xsi:type="gamlpsm:Conditionnelle" condition="contrat = 'P3'">
+            <alors xsi:type="gamlpsm:Affectation" cible="verdictsRecus" expression="verdictsRecus + [map(c[2])]" />
+            <alors xsi:type="gamlpsm:CommunicationFipa" genre="END_CONVERSATION" performatif="INFORM" protocole="PROTOCOLE_IDS" contenus="['fin']" messageSource="m" contratPim="P3" />
+          </sinon>
+        </corps>
+      </corps>
+    </reflexes>
+    <reflexes nom="recevoir_refus" boiteLue="REFUSES" ordre="2" condition="!empty(refuses)">
+      <corps xsi:type="gamlpsm:Boucle" variable="m" collection="copy(refuses)">
+        <corps xsi:type="gamlpsm:Affectation" cible="c" expression="list(m.contents)" declaration="LIST" />
+        <corps xsi:type="gamlpsm:Affectation" cible="nb_refus_recus" expression="nb_refus_recus + 1" />
+        <corps xsi:type="gamlpsm:CommunicationFipa" genre="END_CONVERSATION" performatif="INFORM" protocole="PROTOCOLE_IDS" contenus="['fin']" messageSource="m" contratPim="P3" />
+      </corps>
+    </reflexes>
+    <actions nom="utilite" typeRetour="LIST">
+      <parametres nom="degrade" type="BOOL" />
+      <corps xsi:type="gamlpsm:Affectation" cible="u" expression="list_with(NB_CLASSES, 0.0)" declaration="LIST" commentaire="Déclaré HORS de la zone protégée : `return u` se trouve lui aussi hors de la zone, et une variable déclarée dans la zone n'y serait pas visible." />
+      <corps xsi:type="gamlpsm:ZoneProtegee" identifiant="calcul_utilite" intention="Calculer U(k) pour chaque classe k. Mode nominal : U(k) = poids_ia * c_IA(k) + (1 - poids_ia) * c_R(k) - lambda_fp * (k != 0 ? 1 : 0) * (1 - niveau_menace). Mode dégradé : U(k) = c_dispo(k) - lambda_fp * (...) — la confiance de la source survivante est utilisée TELLE QUELLE, sans division par deux, sinon le système sous-alerte au moment où il est affaibli. Retourner la liste des 5 utilités." contenuParDefaut="// à compléter" />
+      <corps xsi:type="gamlpsm:Retour" expression="u" />
+    </actions>
+    <taches nom="attendre" expressionPoids="0.1" butPim="-">
+      <corps xsi:type="gamlpsm:Ecriture" expression="nil" commentaire="Sentinelle. weighted_tasks exécute la tâche de poids maximal à CHAQUE pas, y compris quand tous les poids valent 0 — le choix est alors arbitraire. Sans corps vide de poids minimal, un agent au repos exécuterait une tâche métier au hasard, sans erreur ni exception." />
+    </taches>
+    <taches nom="consulter" expressionPoids="(etatDecision = 'CONSULTATION' and empty(verdictsRecus) and cycle = cycleDebutConsultation) ? 100.0 : 0.0" butPim="G1">
+      <corps xsi:type="gamlpsm:CommunicationFipa" genre="START_CONVERSATION" performatif="QUERY" protocole="PROTOCOLE_IDS" destinataires="list(AgentIADetection) + list(AgentReglesDetection)" contenus="['P3', connexionCourante, vecteurCourant]" contratPim="P3" />
+    </taches>
+    <taches nom="fusionner" expressionPoids="(etatDecision = 'CONSULTATION' and length(verdictsRecus) = 2) ? 90.0 : 0.0" butPim="G2">
+      <corps xsi:type="gamlpsm:AppelAction" nom="utilite" resultatDans="u" typeResultat="LIST">
+        <arguments nom="degrade" expression="false" />
+      </corps>
+      <corps xsi:type="gamlpsm:Conditionnelle" condition="(max(u) - min(u)) &lt; 1e-6" commentaire="PIM §6 — deux abstentions produisent une distribution uniforme, donc un argmax arbitraire. C'est un ABANDON, pas une décision. Défaut invisible en test agrégé.">
+        <alors xsi:type="gamlpsm:Affectation" cible="etatDecision" expression="'INACTIF'" />
+        <alors xsi:type="gamlpsm:Affectation" cible="nb_abandons" expression="nb_abandons + 1" />
+        <sinon xsi:type="gamlpsm:Affectation" cible="decisionCourante" expression="['classe'::CLASSES[index_of(u, max(u))], 'confiance'::max(u), 'degradee'::false]" />
+        <sinon xsi:type="gamlpsm:Affectation" cible="etatDecision" expression="'EMISSION'" />
+      </corps>
+    </taches>
+    <taches nom="emettre" expressionPoids="(etatDecision = 'EMISSION') ? 95.0 : 0.0" butPim="G1">
+      <corps xsi:type="gamlpsm:Affectation" cible="niveau_menace" expression="min(1.0, alpha_menace * niveau_menace + beta_menace * (decisionCourante['classe'] != 'NORMAL' ? 1.0 : 0.0))" commentaire="MC : mu(t+1) = min(1, alpha*mu(t) + beta*somme g(classe))." />
+      <corps xsi:type="gamlpsm:Affectation" cible="nb_decisions" expression="nb_decisions + 1" />
+      <corps xsi:type="gamlpsm:CommunicationFipa" genre="START_CONVERSATION" performatif="INFORM" protocole="PROTOCOLE_IDS" destinataires="list(AgentAlertes)" contenus="['P4', connexionCourante, decisionCourante]" contratPim="P4" />
+      <corps xsi:type="gamlpsm:CommunicationFipa" genre="START_CONVERSATION" performatif="INFORM" protocole="PROTOCOLE_IDS" destinataires="list(AgentJournalisation)" contenus="['P5', connexionCourante, decisionCourante]" contratPim="P5" />
+      <corps xsi:type="gamlpsm:Affectation" cible="etatDecision" expression="'INACTIF'" />
+    </taches>
+    <taches nom="fusionner_degrade" expressionPoids="(etatDecision = 'CONSULTATION' and length(verdictsRecus) = 1 and (nb_refus_recus &gt; 0 or cycle - cycleDebutConsultation &gt; delai_garde)) ? 80.0 : 0.0" butPim="G4">
+      <corps xsi:type="gamlpsm:AppelAction" nom="utilite" resultatDans="u" typeResultat="LIST">
+        <arguments nom="degrade" expression="true" />
+      </corps>
+      <corps xsi:type="gamlpsm:Conditionnelle" condition="(max(u) - min(u)) &lt; 1e-6" commentaire="PIM §6 — deux abstentions produisent une distribution uniforme, donc un argmax arbitraire. C'est un ABANDON, pas une décision. Défaut invisible en test agrégé.">
+        <alors xsi:type="gamlpsm:Affectation" cible="etatDecision" expression="'INACTIF'" />
+        <alors xsi:type="gamlpsm:Affectation" cible="nb_abandons" expression="nb_abandons + 1" />
+        <sinon xsi:type="gamlpsm:Affectation" cible="decisionCourante" expression="['classe'::CLASSES[index_of(u, max(u))], 'confiance'::max(u), 'degradee'::true]" />
+        <sinon xsi:type="gamlpsm:Affectation" cible="etatDecision" expression="'EMISSION'" />
+        <sinon xsi:type="gamlpsm:Affectation" cible="nb_degradees" expression="nb_degradees + 1" />
+      </corps>
+    </taches>
+    <taches nom="abandonner" expressionPoids="(etatDecision = 'CONSULTATION' and empty(verdictsRecus) and cycle - cycleDebutConsultation &gt; delai_garde) ? 70.0 : 0.0" butPim="G3">
+      <corps xsi:type="gamlpsm:Affectation" cible="nb_abandons" expression="nb_abandons + 1" />
+      <corps xsi:type="gamlpsm:Affectation" cible="etatDecision" expression="'INACTIF'" />
+    </taches>
+  </especes>
+  <especes nom="AgentAlertes" architecture="REFLEX" skills="FIPA" classePim="AgentReactif::AgentAlertes" xmi:id="AgentAlertes">
+    <attributs nom="identifiant" type="STRING" initialisation="'alertes'" />
+    <attributs nom="nb_alertes" type="INT" initialisation="0" />
+    <reflexes nom="traiter_decisions" boiteLue="INFORMS" ordre="1" condition="!empty(informs)">
+      <corps xsi:type="gamlpsm:Boucle" variable="m" collection="copy(informs)">
+        <corps xsi:type="gamlpsm:Affectation" cible="c" expression="list(m.contents)" declaration="LIST" />
+        <corps xsi:type="gamlpsm:Affectation" cible="d" expression="map(c[2])" declaration="MAP" />
+        <corps xsi:type="gamlpsm:Affectation" cible="gravite" expression="float(d['confiance']) * (1.0 + niveau_menace) / 2.0" declaration="FLOAT" />
+        <corps xsi:type="gamlpsm:Conditionnelle" condition="d['classe'] != 'NORMAL' and gravite &gt;= seuil_alerte">
+          <alors xsi:type="gamlpsm:Affectation" cible="nb_alertes" expression="nb_alertes + 1" />
+          <alors xsi:type="gamlpsm:Ecriture" expression="'[ALERTE] connexion ' + string(c[1]) + ' — ' + string(d['classe']) + ' (gravite ' + string(gravite with_precision 3) + ')'" />
+        </corps>
+      </corps>
+    </reflexes>
+  </especes>
+  <especes nom="AgentJournalisation" architecture="REFLEX" skills="FIPA" classePim="AgentReactif::AgentJournalisation" xmi:id="AgentJournalisation">
+    <attributs nom="identifiant" type="STRING" initialisation="'journal'" />
+    <attributs nom="nb_entrees" type="INT" initialisation="0" />
+    <reflexes nom="journaliser" boiteLue="INFORMS" ordre="1" condition="!empty(informs)">
+      <corps xsi:type="gamlpsm:Boucle" variable="m" collection="copy(informs)">
+        <corps xsi:type="gamlpsm:Affectation" cible="c" expression="list(m.contents)" declaration="LIST" />
+        <corps xsi:type="gamlpsm:Affectation" cible="d" expression="map(c[2])" declaration="MAP" />
+        <corps xsi:type="gamlpsm:Affectation" cible="nb_entrees" expression="nb_entrees + 1" />
+        <corps xsi:type="gamlpsm:ZoneProtegee" identifiant="mise_a_jour_matrice_confusion" intention="ENF4 : cet agent est le SEUL à accéder à l'étiquette réelle. Récupérer la classe réelle de la connexion c[1] depuis le dataset, calculer i = 5 * index(classe_reelle) + index(classe_predite), puis matrice_confusion[i] &lt;- matrice_confusion[i] + 1. Recalculer exactitude_courante, rappel_courant et taux_fp_courant." contenuParDefaut="// à compléter" />
+      </corps>
+    </reflexes>
+  </especes>
+  <ressources nom="foretNSLKDD" cheminSource="../ml/artifacts/foret_export.json" strategieGeneration="TABLE" cheminTableGeneree="generated/foret_table.csv" nbArbres="20" profondeurMax="12" nbNoeuds="10232" nbCaracteristiques="122" nbClasses="5" xmi:id="foretNSLKDD" />
+  <ressources nom="foretDemo" cheminSource="../ml/artifacts/foret_export.json" strategieGeneration="INLINE" nbArbres="3" profondeurMax="4" nbNoeuds="45" nbCaracteristiques="122" nbClasses="5" xmi:id="foretDemo" />
+  <experiences nom="ids_gui" type="GUI" repetitions="1">
+    <sorties xsi:type="gamlpsm:Display" nom="metriques" rafraichissement="every(10#cycle)">
+      <couches xsi:type="gamlpsm:ChartLayer" nom="Performance en ligne" typeGraphe="SERIES">
+        <series nom="exactitude" expression="exactitude_courante" couleur="#1f77b4" />
+        <series nom="rappel" expression="rappel_courant" couleur="#d62728" />
+        <series nom="taux FP" expression="taux_fp_courant" couleur="#7f7f7f" />
+      </couches>
+    </sorties>
+    <sorties xsi:type="gamlpsm:Display" nom="menace_et_robustesse" rafraichissement="every(1#cycle)">
+      <couches xsi:type="gamlpsm:ChartLayer" nom="Niveau de menace" typeGraphe="SERIES">
+        <series nom="mu" expression="niveau_menace" couleur="#ff7f0e" />
+      </couches>
+      <couches xsi:type="gamlpsm:ChartLayer" nom="Décisions par mode" typeGraphe="HISTOGRAM">
+        <series nom="nominales" expression="nb_decisions - nb_degradees" couleur="#2ca02c" />
+        <series nom="dégradées" expression="nb_degradees" couleur="#ff7f0e" />
+        <series nom="abandons" expression="nb_abandons" couleur="#d62728" />
+      </couches>
+    </sorties>
+    <sorties xsi:type="gamlpsm:Monitor" nom="decisions" expression="nb_decisions" />
+    <sorties xsi:type="gamlpsm:Monitor" nom="degradees" expression="nb_degradees" />
+    <sorties xsi:type="gamlpsm:Monitor" nom="abandons" expression="nb_abandons" />
+    <sorties xsi:type="gamlpsm:Monitor" nom="alertes" expression="first(AgentAlertes).nb_alertes" />
+    <sorties xsi:type="gamlpsm:Monitor" nom="abstentions_regles" expression="first(AgentReglesDetection).nb_abstentions" />
+    <sorties xsi:type="gamlpsm:Monitor" nom="statut_ia" expression="first(AgentIADetection).state" />
+    <sorties xsi:type="gamlpsm:Monitor" nom="exactitude" expression="exactitude_courante" />
+  </experiences>
+</gamlpsm:GamlModel>

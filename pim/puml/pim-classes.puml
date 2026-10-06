@@ -1,0 +1,238 @@
+@startuml pim-classes
+title PIM - Diagramme de classes du SMA de detection d'intrusion
+
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #FDFDFD
+  BorderColor #333333
+}
+
+package "Metamodele agent" {
+  abstract class Agent {
+    + identifiant : String
+    + statut : StatutAgent
+    + fileEntree : File<Message>
+    + capaciteFile : int
+    --
+    + percevoir(m : Message)
+    + agir()
+    + tomberEnPanne()
+    + reprendre()
+  }
+
+  abstract class AgentReactif {
+    --
+    + decider(p : Perception) : Action
+    .. d = f(p) ..
+  }
+
+  abstract class AgentBaseModele {
+    + modele : Modele
+    --
+    + decider(p : Perception) : Action
+    .. d = f(p, sigma) ..
+  }
+
+  abstract class AgentBaseButs {
+    + buts : List<But>
+    --
+    + utilite(a : Action) : float
+    + decider(p : Perception) : Action
+    .. d = argmax U(a | p, G) ..
+  }
+
+  Agent <|-- AgentReactif
+  Agent <|-- AgentBaseModele
+  Agent <|-- AgentBaseButs
+}
+
+package "Agents du systeme" {
+  class AgentCapture {
+    + positionLecture : int
+    + debit : int
+    --
+    + lireProchaineConnexion() : Connexion
+  }
+  class AgentExtraction {
+    + vocabulaires : Map<String, List<String>>
+    + bornes : Map<String, Pair>
+    --
+    + encoder(c : Connexion) : VecteurCaracteristiques
+  }
+  class AgentReglesDetection {
+    + signatures : List<Signature>
+    --
+    + evaluer(c : Connexion) : Verdict
+  }
+  class AgentIADetection {
+    + foret : ForetAleatoire
+    + seuil : float
+    --
+    + classer(v : VecteurCaracteristiques) : Verdict
+  }
+  class AgentDecision {
+    + etat : EtatDecision
+    + poidsIA : float
+    + poidsRegles : float
+    + lambdaFP : float
+    + delaiGarde : int
+    + verdictsEnAttente : Map<int, List<Verdict>>
+    --
+    + utilite(k : ClasseAttaque) : float
+    + fusionner() : Decision
+    + fusionnerDegrade() : Decision
+  }
+  class AgentAlertes {
+    + seuilGravite : float
+    --
+    + produire(d : Decision) : Alerte
+  }
+  class AgentJournalisation {
+    + journal : List<EntreeJournal>
+    + matriceConfusion : int[4]
+    --
+    + consigner(e : EntreeJournal)
+    + calculerMetriques() : Metriques
+  }
+
+  AgentReactif <|-- AgentCapture
+  AgentReactif <|-- AgentExtraction
+  AgentReactif <|-- AgentReglesDetection
+  AgentReactif <|-- AgentAlertes
+  AgentReactif <|-- AgentJournalisation
+  AgentBaseModele <|-- AgentIADetection
+  AgentBaseButs <|-- AgentDecision
+}
+
+package "Entites metier" {
+  class Connexion {
+    + id : int
+    + caracteristiques : Map<String, Object>
+    - etiquetteReelle : ClasseAttaque
+    + cycleArrivee : int
+    + etat : EtatConnexion
+  }
+  class VecteurCaracteristiques {
+    + valeurs : float[122]
+    + connexionId : int
+  }
+  class Verdict {
+    + emetteur : String
+    + nature : NatureVerdict
+    + classe : ClasseAttaque
+    + distribution : float[5]
+    + confiance : float
+    + cycle : int
+    + justification : String
+    --
+    <b>inv</b> somme(distribution) = 1
+    <b>inv</b> nature = ABSTENTION =>
+    ..    distribution uniforme
+  }
+  note right of Verdict
+    <b>Trois natures distinctes</b>
+    DETECTION  : masse sur classe
+    ABSENCE    : masse sur NORMAL
+    ABSTENTION : uniforme (entropie max)
+
+    Une base de signatures ne peut
+    jamais emettre ABSENCE : ne pas
+    se declencher ne prouve rien.
+  end note
+  class Decision {
+    + classe : ClasseAttaque
+    + confiance : float
+    + degradee : bool
+    + politique : String
+  }
+  class Alerte {
+    + gravite : float
+    + cycle : int
+  }
+  class EntreeJournal {
+    + typeEvenement : TypeEvenement
+    + emetteur : String
+    + cycle : int
+    + charge : Map
+  }
+  class But {
+    + identifiant : String
+    + priorite : int
+  }
+  class Signature {
+    + identifiant : String
+    + condition : Predicat
+    + classeVisee : ClasseAttaque
+  }
+}
+
+enum ClasseAttaque {
+  NORMAL
+  DOS
+  PROBE
+  R2L
+  U2R
+}
+enum NatureVerdict {
+  DETECTION
+  ABSENCE
+  ABSTENTION
+}
+enum EtatConnexion {
+  RECUE
+  EN_EXTRACTION
+  EN_ANALYSE
+  VERDICTS_PARTIELS
+  DECIDEE
+  ALERTEE
+  JOURNALISEE
+  CLOTUREE
+  REJETEE
+}
+enum StatutAgent {
+  ACTIF
+  OCCUPE
+  EN_PANNE
+}
+enum EtatDecision {
+  INACTIF
+  CONSULTATION
+  FUSION
+  FUSION_DEGRADEE
+  ABANDON
+  EMISSION
+}
+
+AgentCapture ..> Connexion : cree
+AgentExtraction ..> VecteurCaracteristiques : produit
+Connexion "1" -- "1" VecteurCaracteristiques
+AgentReglesDetection ..> Verdict : emet
+AgentIADetection ..> Verdict : emet
+AgentReglesDetection "1" *-- "*" Signature
+AgentDecision "1" *-- "*" But
+Decision "1" o-- "1..2" Verdict : verdictsSources
+AgentDecision ..> Decision : produit
+AgentAlertes ..> Alerte : produit
+Alerte "1" -- "1" Decision
+AgentJournalisation "1" *-- "*" EntreeJournal
+Connexion --> ClasseAttaque
+Verdict --> ClasseAttaque
+Decision --> ClasseAttaque
+Connexion --> EtatConnexion
+Agent --> StatutAgent
+AgentDecision --> EtatDecision
+
+note right of Connexion::etiquetteReelle
+  Attribut prive (ADR-07).
+  Accessible uniquement a
+  AgentJournalisation pour
+  le calcul de la matrice
+  de confusion (ENF4).
+end note
+
+note bottom of AgentDecision
+  Seul agent initiateur du
+  protocole de consultation P3
+  (organisation B, PIM section 4).
+end note
+@enduml

@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Instance PSM minimale — preuve d'instanciabilité du métamodèle.
+
+  Contenu : l'AgentDecision réduit à l'essentiel, c'est-à-dire au seul
+  élément du modèle où les trois difficultés du projet se rencontrent :
+    - architecture weighted_tasks avec état réifié (règle T-5)
+    - un unique reflex sur la boîte informs (contrainte C1)
+    - aiguillage sur le discriminateur de contrat (règle T-11)
+
+  Ce n'est pas le modèle final. C'est le cas de test qui prouve que le
+  métamodèle sait exprimer le cas le plus contraint.
+-->
+<gamlpsm:GamlModel
+    xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:gamlpsm="http://ids-sma-idm.org/psm/gaml/1.0"
+    nom="ids_sma_minimal"
+    auteur="Projet IDS-SMA-IDM"
+    description="Instance de test — AgentDecision seul">
+
+  <sectionGlobale>
+    <attributs nom="PROTOCOLE_IDS" type="STRING" initialisation="'fipa-request'"
+               commentaire="Valeur non confirmée par la doc 2025-06. Point de correction unique (PSM 5.4)."/>
+    <attributs nom="CLASSES" type="LIST" typeElement="STRING"
+               initialisation="['NORMAL','DOS','PROBE','R2L','U2R']"/>
+    <attributs nom="poids_ia" type="FLOAT" initialisation="0.35" estParametre="true"
+               libelle="Poids de la source IA" minimum="0.0" maximum="1.0" categorie="Fusion"/>
+    <attributs nom="lambda_fp" type="FLOAT" initialisation="0.0" estParametre="true"
+               libelle="Pénalité de faux positif" minimum="0.0" maximum="1.0" categorie="Fusion"/>
+    <attributs nom="niveau_menace" type="FLOAT" initialisation="0.0"/>
+  </sectionGlobale>
+
+  <especes nom="AgentDecision" architecture="WEIGHTED_TASKS" skills="FIPA"
+           classePim="AgentBaseButs::AgentDecision">
+
+    <attributs nom="etatDecision" type="STRING" initialisation="'INACTIF'"
+               commentaire="T-5 : machine à états du PIM réifiée en attribut, faute de pouvoir cumuler control: fsm et control: weighted_tasks."/>
+    <attributs nom="verdictsRecus" type="LIST" typeElement="MAP" initialisation="[]"/>
+    <attributs nom="cycleDebutConsultation" type="INT" initialisation="-1"/>
+    <attributs nom="delaiGarde" type="INT" initialisation="3" estParametre="true"
+               libelle="Délai de garde tau" minimum="1" maximum="20" categorie="Fusion"/>
+
+    <!-- C1 : UN SEUL reflex sur informs, alors que deux contrats y aboutissent -->
+    <reflexes nom="recevoir_informs" boiteLue="INFORMS" ordre="1"
+              condition="!empty(informs)">
+      <corps xsi:type="gamlpsm:Boucle" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             variable="m" collection="copy(informs)">
+        <corps xsi:type="gamlpsm:Affectation" declaration="LIST" cible="c"
+               expression="list(m.contents)"
+               commentaire="C7 : contents lu UNE seule fois, puis stocké."/>
+        <corps xsi:type="gamlpsm:Affectation" declaration="STRING" cible="contrat"
+               expression="string(c[0])"
+               commentaire="T-11 : discriminateur de contrat en tête."/>
+        <corps xsi:type="gamlpsm:Conditionnelle" condition="contrat = 'P2'">
+          <alors xsi:type="gamlpsm:Affectation" cible="etatDecision" expression="'CONSULTATION'"/>
+          <alors xsi:type="gamlpsm:Affectation" cible="cycleDebutConsultation" expression="cycle"/>
+          <alors xsi:type="gamlpsm:Affectation" cible="verdictsRecus" expression="[]"/>
+          <sinon xsi:type="gamlpsm:Conditionnelle" condition="contrat = 'P3'">
+            <alors xsi:type="gamlpsm:Affectation" cible="verdictsRecus"
+                   expression="verdictsRecus + [map(c[1])]"/>
+          </sinon>
+        </corps>
+      </corps>
+    </reflexes>
+
+    <!-- Tâche sentinelle : obligatoire, cf. PSM §4.2 -->
+    <taches nom="attendre" expressionPoids="0.1" butPim="-">
+      <corps xsi:type="gamlpsm:Ecriture" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             expression="nil"
+             commentaire="Corps vide. Sans cette sentinelle, weighted_tasks exécuterait une tâche métier arbitraire quand tous les poids valent 0."/>
+    </taches>
+
+    <taches nom="consulter" butPim="G1"
+            expressionPoids="(etatDecision = 'CONSULTATION' and empty(verdictsRecus) and cycle = cycleDebutConsultation) ? 100.0 : 0.0">
+      <corps xsi:type="gamlpsm:CommunicationFipa" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             genre="START_CONVERSATION" performatif="QUERY" protocole="PROTOCOLE_IDS"
+             destinataires="list(AgentIADetection) + list(AgentReglesDetection)"
+             contenus="['P3', connexionCourante, vecteurCourant]"
+             contratPim="P3"/>
+    </taches>
+
+    <taches nom="fusionner" butPim="G2"
+            expressionPoids="(etatDecision = 'CONSULTATION' and length(verdictsRecus) = 2) ? 90.0 : 0.0">
+      <corps xsi:type="gamlpsm:ZoneProtegee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             identifiant="fusion_nominale"
+             intention="Calculer U(k) = w_IA*c_IA(k) + w_R*c_R(k) - lambda_FP*1[k!=NORMAL]*(1-mu) pour chaque classe k, puis argmax. Traiter le cas ABSTENTION double : si max(U)-min(U) &lt; 1e-6, basculer en ABANDON."
+             contenuParDefaut="// à compléter"/>
+      <corps xsi:type="gamlpsm:Affectation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             cible="etatDecision" expression="'EMISSION'"/>
+    </taches>
+
+    <taches nom="fusionner_degrade" butPim="G4"
+            expressionPoids="(etatDecision = 'CONSULTATION' and length(verdictsRecus) = 1 and cycle - cycleDebutConsultation &gt; delaiGarde) ? 80.0 : 0.0">
+      <corps xsi:type="gamlpsm:ZoneProtegee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             identifiant="fusion_degradee"
+             intention="Renormalisation : la confiance de la source survivante est utilisée telle quelle. U_deg(k) = c_dispo(k) - lambda_FP*1[k!=NORMAL]*(1-mu). Ne PAS diviser par deux, sinon le système sous-alerte au moment où il est affaibli."
+             contenuParDefaut="// à compléter"/>
+      <corps xsi:type="gamlpsm:Affectation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             cible="etatDecision" expression="'EMISSION'"/>
+    </taches>
+
+    <taches nom="abandonner" butPim="G3"
+            expressionPoids="(etatDecision = 'CONSULTATION' and empty(verdictsRecus) and cycle - cycleDebutConsultation &gt; delaiGarde) ? 70.0 : 0.0">
+      <corps xsi:type="gamlpsm:Affectation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             cible="etatDecision" expression="'INACTIF'"/>
+    </taches>
+
+    <taches nom="emettre" butPim="G1"
+            expressionPoids="(etatDecision = 'EMISSION') ? 95.0 : 0.0">
+      <corps xsi:type="gamlpsm:CommunicationFipa" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             genre="START_CONVERSATION" performatif="INFORM" protocole="PROTOCOLE_IDS"
+             destinataires="list(AgentAlertes)" contenus="['P4', decisionCourante]"
+             contratPim="P4"/>
+      <corps xsi:type="gamlpsm:CommunicationFipa" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             genre="START_CONVERSATION" performatif="INFORM" protocole="PROTOCOLE_IDS"
+             destinataires="list(AgentJournalisation)" contenus="['P5', entreeJournal]"
+             contratPim="P5"/>
+      <corps xsi:type="gamlpsm:Affectation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             cible="etatDecision" expression="'INACTIF'"/>
+    </taches>
+  </especes>
+
+  <ressources nom="foretNSLKDD" cheminSource="../ml/artifacts/foret_export.json"
+              strategieGeneration="TABLE" cheminTableGeneree="generated/foret_table.csv"
+              nbArbres="20" profondeurMax="12" nbNoeuds="10232"
+              nbCaracteristiques="122" nbClasses="5"/>
+
+  <ressources nom="foretDemo" cheminSource="../ml/artifacts/foret_export.json"
+              strategieGeneration="INLINE"
+              nbArbres="3" profondeurMax="4" nbNoeuds="45"
+              nbCaracteristiques="122" nbClasses="5"/>
+
+  <experiences nom="ids_gui" type="GUI">
+    <sorties xsi:type="gamlpsm:Display" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             nom="tableau_de_bord" rafraichissement="every(1#cycle)">
+      <couches xsi:type="gamlpsm:ChartLayer" nom="Exactitude en ligne" typeGraphe="SERIES">
+        <series nom="exactitude" expression="exactitude_courante" couleur="#1f77b4"/>
+        <series nom="rappel" expression="rappel_courant" couleur="#d62728"/>
+      </couches>
+      <couches xsi:type="gamlpsm:ChartLayer" nom="Niveau de menace" typeGraphe="SERIES">
+        <series nom="mu" expression="niveau_menace" couleur="#ff7f0e"/>
+      </couches>
+    </sorties>
+    <sorties xsi:type="gamlpsm:Monitor" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             nom="decisions_degradees" expression="nb_decisions_degradees"/>
+  </experiences>
+
+</gamlpsm:GamlModel>

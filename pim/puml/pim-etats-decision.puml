@@ -1,0 +1,47 @@
+@startuml pim-etats-decision
+title PIM - Machine a etats de l'AgentDecision (agent base sur les buts)
+
+skinparam state {
+  BackgroundColor #FDFDFD
+  BorderColor #333333
+}
+
+[*] --> INACTIF
+
+INACTIF --> CONSULTATION : reception P2\nINFORM(connexionId, Vecteur)\n/ emettre P3 vers IA et Regles\n/ armer le delai tau
+
+CONSULTATION --> FUSION : les 2 verdicts recus\n[avant expiration de tau]
+CONSULTATION --> FUSION_DEGRADEE : e12 EXPIRATION_ATTENTE\n[exactement 1 verdict recu]
+CONSULTATION --> ABANDON : e12 EXPIRATION_ATTENTE\n[0 verdict recu]
+
+FUSION --> EMISSION : / calculer\nU(k) = w_IA.c_IA(k) + w_R.c_R(k)\n     - lambda_FP.1[k!=normal].(1-mu)
+FUSION_DEGRADEE --> EMISSION : / calculer\nU(k) = c_dispo(k)\n     - lambda_FP.1[k!=normal].(1-mu)\n/ marquer degradee := true
+
+ABANDON --> INACTIF : / consigner "non analyse"\n/ aucune alerte, aucun compteur
+
+EMISSION --> INACTIF : / emettre P4 vers AgentAlertes\n/ emettre P5 vers AgentJournalisation
+
+note right of FUSION_DEGRADEE
+  Renormalisation deliberee :
+  la confiance de la source
+  survivante est utilisee telle
+  quelle, sans division par 2.
+  Sinon le systeme sous-alerterait
+  precisement quand il est affaibli.
+end note
+
+note left of CONSULTATION
+  But G3 : decider dans le delai.
+  Realisable uniquement parce que
+  l'agent est INITIATEUR (organisation B)
+  et maitrise donc l'instant t0
+  ou le delai est arme.
+end note
+
+note bottom of ABANDON
+  But G4 : rester operationnel.
+  Ne pas produire de faux compteur
+  est preferable a produire une
+  decision sans fondement.
+end note
+@enduml

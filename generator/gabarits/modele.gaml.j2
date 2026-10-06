@@ -1,0 +1,117 @@
+{%- import 'instructions.j2' as I with context -%}
+/**
+ * {{ m.nom }} — {{ m.description }}
+ *
+ * FICHIER GÉNÉRÉ. Ne pas modifier hors des zones @user-begin / @user-end.
+ * Toute autre modification serait perdue à la prochaine régénération.
+ *
+ * Chaîne : {{ chemin_psm }} ({{ backend }})
+ *          -> generator/generer.py
+ *          -> ce fichier
+ *
+ * Auteur du modèle : {{ m.auteur }}
+ * Généré le        : {{ horodatage }}
+ */
+model {{ m.nom }}
+
+{% for imp in m.liste('imports') -%}
+import "{{ imp.chemin }}"
+{% endfor %}
+{%- set g = m.liste('sectionGlobale') | first %}
+global {
+{%- for a in g.liste('attributs') %}
+{{ I.declaration_attribut(a, 1) }}
+{%- endfor %}
+
+{% for act in g.liste('actions') %}
+{{ I.rendre_action(act, 1) }}
+{% endfor %}
+    init {
+{{- I.bloc(g.liste('initialisation'), 2) }}
+    }
+{% for r in g.liste('reflexes') | sort(attribute='ordre') %}
+{{ I.rendre_reflexe(r, 1) }}
+{% endfor -%}
+}
+
+{% for sp in m.liste('especes') %}
+// ===========================================================================
+// {{ sp.nom }}
+// Classe PIM : {{ sp.classePim }}
+// Architecture : {{ sp.architecture }}{{ ' (règle T-1)' if sp.architecture == 'reflex' else (' (règle T-2)' if sp.architecture == 'fsm' else ' (règle T-3)') }}
+// ===========================================================================
+species {{ sp.nom }}{% if sp.parent %} parent: {{ sp.parent | sansdiese }}{% endif %}
+{%- if sp.architecture != 'reflex' %} control: {{ sp.architecture }}{% endif %}
+{%- if sp.skills %} skills: [{{ sp.skills if sp.skills is string else sp.skills | join(', ') }}]{% endif %} {
+{%- for a in sp.liste('attributs') %}
+{{ I.declaration_attribut(a, 1) }}
+{%- endfor %}
+{% for act in sp.liste('actions') %}
+{{ I.rendre_action(act, 1) }}
+{% endfor %}
+{%- for r in sp.liste('reflexes') | sort(attribute='ordre') %}
+{{ I.rendre_reflexe(r, 1) }}
+{% endfor %}
+{%- for e in sp.liste('etats') %}
+{%- if e.boiteLue and e.boiteLue != '-' %}
+    // Cet état lit la file '{{ e.boiteLue }}'. Plusieurs états peuvent lire la
+    // même file sans violer C1 : un seul état est actif à la fois, et
+    // l'exclusivité est garantie par la machine à états elle-même.
+{%- endif %}
+    state {{ e.nom }}{% if e.estInitial == 'true' %} initial: true{% endif %}{% if e.estFinal == 'true' %} final: true{% endif %} {
+{%- if e.liste('corpsEntree') %}
+        enter {
+{{- I.bloc(e.liste('corpsEntree'), 3) }}
+        }
+{%- endif %}
+{{- I.bloc(e.liste('corps'), 2) }}
+{%- if e.liste('corpsSortie') %}
+        exit {
+{{- I.bloc(e.liste('corpsSortie'), 3) }}
+        }
+{%- endif %}
+{%- for t in e.liste('transitions') %}
+        transition to: {{ t.cible | sansdiese }} when: {{ t.condition }};{% if t.evenementPim %}   // {{ t.evenementPim }}{% endif %}
+{%- endfor %}
+    }
+{% endfor %}
+{%- for t in sp.liste('taches') %}
+    // but {{ t.butPim }}
+    task {{ t.nom }} weight: {{ t.expressionPoids }} {
+{{- I.bloc(t.liste('corps'), 2) }}
+    }
+{% endfor -%}
+}
+{% endfor %}
+{% for x in m.liste('experiences') %}
+experiment {{ x.nom }} type: {{ x.type }}{% if x.repetitions and x.repetitions != '1' %} repeat: {{ x.repetitions }}{% endif %} {
+{%- for a in x.liste('parametres') %}
+{{ I.declaration_attribut(a, 1) }}
+{%- endfor %}
+{%- for a in parametres_globaux %}
+    parameter "{{ a.libelle or a.nom }}" var: {{ a.nom }}{% if a.minimum is not none %} min: {{ a.minimum }}{% endif %}{% if a.maximum is not none %} max: {{ a.maximum }}{% endif %}{% if a.categorie %} category: "{{ a.categorie }}"{% endif %};
+{%- endfor %}
+
+    output {
+{%- for o in x.liste('sorties') %}
+{%- if o.classe == 'Display' %}
+        display "{{ o.nom }}"{% if o.rafraichissement %} refresh: {{ o.rafraichissement }}{% endif %} {
+{%- for c in o.liste('couches') %}
+{%- if c.classe == 'ChartLayer' %}
+            chart "{{ c.nom }}" type: {{ c.typeGraphe }} {
+{%- for s in c.liste('series') %}
+                data "{{ s.nom }}" value: {{ s.expression }}{% if s.couleur %} color: rgb("{{ s.couleur }}"){% endif %};
+{%- endfor %}
+            }
+{%- else %}
+            species {{ c.espece | sansdiese }}{% if c.aspect %} aspect: {{ c.aspect }}{% endif %};
+{%- endif %}
+{%- endfor %}
+        }
+{%- else %}
+        monitor "{{ o.nom }}" value: {{ o.expression }};
+{%- endif %}
+{%- endfor %}
+    }
+}
+{% endfor %}

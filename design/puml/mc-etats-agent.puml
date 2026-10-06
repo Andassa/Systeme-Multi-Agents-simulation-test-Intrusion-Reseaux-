@@ -1,0 +1,32 @@
+@startuml mc-etats-agent
+title Modele Conceptuel - Machine a etats d'un agent a_i
+
+skinparam state {
+  BackgroundColor #FDFDFD
+  BorderColor #333333
+}
+
+[*] --> ACTIF
+
+ACTIF --> OCCUPE : message recu\n[file non vide]
+OCCUPE --> ACTIF : traitement acheve\n/ emission du message sortant
+
+ACTIF --> EN_PANNE : e10 / PANNE_AGENT\n[Bernoulli(p_f)]
+OCCUPE --> EN_PANNE : e10 / PANNE_AGENT\n[Bernoulli(p_f)]
+
+EN_PANNE --> ACTIF : e11 / REPRISE_AGENT\n[Bernoulli(p_r)]
+
+note right of EN_PANNE
+  Retire de A_act.
+  Duree de panne ~ Geometrique(p_r)
+  Disponibilite asymptotique :
+  A_i = p_r / (p_f + p_r)
+end note
+
+note left of OCCUPE
+  Les messages continuent
+  d'arriver dans file_i,
+  bornee par kappa.
+  Depassement => e13.
+end note
+@enduml

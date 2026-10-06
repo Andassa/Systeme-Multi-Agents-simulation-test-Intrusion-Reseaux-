@@ -1,0 +1,50 @@
+{
+ "RM1": {
+  "classe": "DOS",
+  "ancienne": 0.999,
+  "nouvelle": 0.999,
+  "tirs_train": 27970
+ },
+ "RM2": {
+  "classe": "DOS",
+  "ancienne": 1.0,
+  "nouvelle": 1.0,
+  "tirs_train": 2197
+ },
+ "RM3": {
+  "classe": "DOS",
+  "ancienne": 0.579,
+  "nouvelle": 0.575,
+  "tirs_train": 835
+ },
+ "RM4": {
+  "classe": "DOS",
+  "ancienne": 0.72,
+  "nouvelle": 0.72,
+  "tirs_train": 25
+ },
+ "RM5": {
+  "classe": "PROBE",
+  "ancienne": 0.702,
+  "nouvelle": 0.684,
+  "tirs_train": 3736
+ },
+ "RM6": {
+  "classe": "PROBE",
+  "ancienne": 0.999,
+  "nouvelle": 0.233,
+  "tirs_train": 8888
+ },
+ "RM7": {
+  "classe": "R2L",
+  "ancienne": 0.264,
+  "nouvelle": 0.264,
+  "tirs_train": 1175
+ },
+ "RM8": {
+  "classe": "U2R",
+  "ancienne": 0.714,
+  "nouvelle": 0.5,
+  "tirs_train": 10
+ }
+}

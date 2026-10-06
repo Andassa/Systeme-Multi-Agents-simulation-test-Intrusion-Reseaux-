@@ -1,0 +1,23 @@
+[
+ {
+  "profondeur": 14,
+  "n_arbres": 20,
+  "noeuds": 11326,
+  "acc_appr": 0.9922701383238405,
+  "acc_valid": 0.9911093470926772
+ },
+ {
+  "profondeur": 12,
+  "n_arbres": 10,
+  "noeuds": 4556,
+  "acc_appr": 0.9897001329655282,
+  "acc_valid": 0.9892835880134947
+ },
+ {
+  "profondeur": 12,
+  "n_arbres": 30,
+  "noeuds": 13760,
+  "acc_appr": 0.9907420270297088,
+  "acc_valid": 0.9903552292121452
+ }
+]

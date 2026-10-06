@@ -1,0 +1,68 @@
+@startuml pim-sequence-degrade
+title PIM - Sequence degradee : panne de l'AgentIADetection et expiration du delai
+
+skinparam sequence {
+  ArrowColor #333333
+  LifeLineBorderColor #666666
+  ParticipantBackgroundColor #FDFDFD
+  ParticipantBorderColor #333333
+}
+
+participant "AgentExtraction" as EXT
+participant "AgentDecision" as DEC
+participant "AgentIADetection" as IA
+participant "AgentReglesDetection" as REG
+participant "AgentAlertes" as ALE
+participant "AgentJournalisation" as JOU
+
+autonumber
+
+IA -> IA : e10 PANNE_AGENT\nBernoulli(p_f)
+note right of IA #FFEEEE : statut := EN_PANNE\nA_act := A_act \ {IA}
+IA -> JOU : INFORM(EntreeJournal[PANNE])
+destroy IA
+
+EXT -> DEC : INFORM(connexionId, Vecteur)
+activate DEC
+note right of DEC : etat := CONSULTATION\ndelai tau arme au cycle t0
+
+DEC ->x IA : QUERY(connexionId, Vecteur)
+note right of DEC #FFEEEE : aucun destinataire actif
+DEC -> REG : QUERY(connexionId, Vecteur)
+
+activate REG
+REG --> DEC : INFORM(Verdict[Regles])
+deactivate REG
+
+loop tant que t - t0 <= tau
+  DEC -> DEC : attente du second verdict
+end
+
+DEC -> DEC : e12 EXPIRATION_ATTENTE
+note right of DEC : etat := FUSION_DEGRADEE
+
+DEC -> DEC : fusionnerDegrade()\nU(k) = c_Regles(k) - lambda_FP.(1-mu)\n(poids renormalise : pas de\npenalisation de la source unique)
+
+DEC -> ALE : INFORM(Decision[degradee=true])
+DEC -> JOU : INFORM(EntreeJournal[EXPIRATION])
+deactivate DEC
+
+activate ALE
+ALE -> JOU : INFORM(EntreeJournal[ALERTE])
+deactivate ALE
+
+... quelques cycles plus tard ...
+
+create IA
+IA -> IA : e11 REPRISE_AGENT\nBernoulli(p_r)
+note right of IA #EEFFEE : statut := ACTIF\nA_act := A_act U {IA}
+IA -> JOU : INFORM(EntreeJournal[REPRISE])
+
+note over DEC, JOU
+  Exigence ENF1 satisfaite : la surveillance
+  n'est pas suspendue. La decision est marquee
+  "degradee" et consignee comme telle, ce qui
+  permet de quantifier a posteriori la perte
+  de qualite due a la panne.
+end note
+@enduml

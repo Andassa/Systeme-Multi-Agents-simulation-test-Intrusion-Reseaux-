@@ -1,0 +1,58 @@
+@startuml cim-cas-utilisation
+title CIM - Diagramme de cas d'utilisation du SDI
+
+left to right direction
+skinparam usecase {
+  BackgroundColor #FDFDFD
+  BorderColor #333333
+}
+
+actor "Analyste securite" as SOC
+actor "Administrateur systeme" as ADM
+actor "Auditeur / RSSI" as AUD
+actor "Attaquant" as ATT
+actor "Reseau surveille" as NET
+actor "Base de signatures" as SIG
+actor "Corpus d'apprentissage" as COR
+
+rectangle "Systeme de Detection d'Intrusion" {
+  usecase "UC1\nSurveiller le trafic reseau" as UC1
+  usecase "UC2\nAnalyser un echange" as UC2
+  usecase "UC3\nDetecter par signature" as UC3
+  usecase "UC4\nDetecter par apprentissage" as UC4
+  usecase "UC5\nConsolider un jugement" as UC5
+  usecase "UC6\nEmettre une alerte graduee" as UC6
+  usecase "UC7\nConsigner un evenement" as UC7
+  usecase "UC8\nConsulter le tableau de bord" as UC8
+  usecase "UC9\nConfigurer la sensibilite" as UC9
+  usecase "UC10\nPoursuivre en mode degrade" as UC10
+  usecase "UC11\nMesurer la qualite de detection" as UC11
+  usecase "UC12\nReguler la charge" as UC12
+}
+
+NET --> UC1
+ATT --> NET
+SIG --> UC3
+COR --> UC4
+SOC --> UC6
+SOC --> UC8
+ADM --> UC9
+AUD --> UC7
+AUD --> UC11
+
+UC1 ..> UC2 : <<include>>
+UC2 ..> UC3 : <<include>>
+UC2 ..> UC4 : <<include>>
+UC2 ..> UC5 : <<include>>
+UC5 ..> UC6 : <<include>>
+UC5 ..> UC7 : <<include>>
+UC10 ..> UC5 : <<extend>>
+UC12 ..> UC1 : <<extend>>
+UC11 ..> UC7 : <<include>>
+
+note bottom of UC10
+  Declenche par expiration du delai
+  de garde tau (evenement e12).
+  Exigence ENF1.
+end note
+@enduml

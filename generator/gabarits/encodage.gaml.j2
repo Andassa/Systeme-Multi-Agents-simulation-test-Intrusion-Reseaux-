@@ -1,0 +1,116 @@
+/**
+ * Table d'encodage NSL-KDD — GÉNÉRÉE depuis ml/artifacts/parametres_encodage.json
+ *
+ * NE PAS MODIFIER. Toute retouche serait perdue à la régénération, et surtout
+ * ferait diverger la simulation du modèle entraîné.
+ *
+ * Pourquoi ce fichier est généré et non écrit à la main
+ * -----------------------------------------------------
+ * L'encodage (vocabulaires one-hot, bornes de normalisation) n'est pas une
+ * décision de conception : c'est une DONNÉE produite par l'apprentissage, sur
+ * le TRAIN uniquement. La saisir à la main introduirait un risque de
+ * divergence silencieuse entre ce que la forêt a appris et ce que la
+ * simulation lui présente — l'erreur la plus coûteuse possible, puisqu'elle
+ * dégraderait les performances sans produire la moindre erreur d'exécution.
+ *
+ * Règle appliquée à l'Étape 6 : est généré tout ce qui est dérivable d'un
+ * artefact existant ; reste en zone protégée ce qui encode une décision.
+ *
+ * {{ nb_numeriques }} variables numériques + {{ nb_onehot }} indicatrices = {{ nb_features }} composantes
+ * Généré le : {{ horodatage }}
+ */
+model encodage_nslkdd
+
+global {
+
+    // Indices de racine des {{ nb_arbres }} arbres dans foret_table.csv
+    list<int> RACINES_FORET <- {{ racines }};
+
+    // Bornes min/max établies sur le TRAIN uniquement (les mêmes que
+    // ml/preprocessing.py). Le test est écrêté à [0,1] après application.
+    list<float> BORNES_MIN <- {{ bornes_min }};
+    list<float> BORNES_MAX <- {{ bornes_max }};
+
+    // Colonnes brutes numériques, dans l'ordre du fichier NSL-KDD
+    list<int> COLONNES_NUM <- {{ colonnes_num }};
+
+    // Vocabulaires one-hot : modalité -> indice de la composante.
+    // Une modalité absente du vocabulaire laisse son bloc entièrement nul —
+    // c'est le comportement spécifié en ADR-02 pour les modalités inconnues
+    // du test, et il est mesuré : {{ nb_onehot }} indicatrices au total.
+{%- for nom, table in vocabulaires.items() %}
+    map<string, int> VOC_{{ nom | upper }} <- {{ table }};
+{%- endfor %}
+
+    // Index nommé des {{ nb_features }} composantes du vecteur encodé.
+    // Permet d'écrire les signatures RM1–RM11 avec les noms de variables du
+    // CIM (`IDX['count']`, `IDX['flag=S0']`) plutôt qu'avec des indices
+    // numériques, qu'aucun relecteur ne pourrait vérifier.
+    map<string, int> IDX <- {{ index_features }};
+
+    /**
+     * Valeur BRUTE d'une composante numérique, reconstituée depuis le vecteur
+     * normalisé.
+     *
+     * Nécessaire parce que les signatures RM1–RM11 du CIM sont énoncées en
+     * unités réelles (« count >= 100 », « src_bytes > 1000 ») alors que
+     * l'AgentReglesDetection reçoit le vecteur normalisé. Convertir les seuils
+     * plutôt que les valeurs aurait donné un code illisible et invérifiable
+     * face au CIM.
+     *
+     * RÉSERVE : le test a été écrêté à [0,1]. Une valeur supérieure au maximum
+     * du train est donc reconstituée à ce maximum, pas à sa valeur d'origine.
+     * Sans effet sur RM1–RM11, dont les seuils sont tous très inférieurs aux
+     * maxima — mais toute signature future à seuil élevé devrait le savoir.
+     */
+    float valeur_brute (list<float> v, int j) {
+        return v[j] * (BORNES_MAX[j] - BORNES_MIN[j]) + BORNES_MIN[j];
+    }
+
+    /**
+     * Encode une ligne brute NSL-KDD (41 champs) en vecteur de {{ nb_features }} flottants.
+     *
+     * Compte localement les modalités jamais vues à l'apprentissage
+     * (indicateur de déplacement de distribution du jeu de test).
+     */
+    list<float> encoder_connexion (list brut) {
+        list<float> v <- list_with({{ nb_features }}, 0.0);
+        int nb_modalites_inconnues <- 0;
+
+        // --- variables numériques, normalisées min-max puis écrêtées --------
+        int j <- 0;
+        loop c over: COLONNES_NUM {
+            float x <- float(brut[c]);
+            float etendue <- BORNES_MAX[j] - BORNES_MIN[j];
+            float xn <- (etendue = 0.0) ? 0.0 : (x - BORNES_MIN[j]) / etendue;
+            v[j] <- min(1.0, max(0.0, xn));
+            j <- j + 1;
+        }
+
+        // --- variables catégorielles, one-hot -------------------------------
+{%- for nom, info in categorielles.items() %}
+        string m_{{ nom }} <- string(brut[{{ info.colonne }}]);
+        if (VOC_{{ nom | upper }} contains_key m_{{ nom }}) {
+            v[int(VOC_{{ nom | upper }}[m_{{ nom }}])] <- 1.0;
+        } else {
+            nb_modalites_inconnues <- nb_modalites_inconnues + 1;
+        }
+{%- endfor %}
+
+        return v;
+    }
+
+    /**
+     * Classe réelle d'une ligne brute, lue depuis l'étiquette NSL-KDD.
+     * ENF4 : cette action n'est appelée que par l'AgentJournalisation.
+     */
+    int classe_reelle (list brut) {
+        string etiquette <- string(brut[{{ colonne_label }}]);
+{%- for classe, modalites in etiquettes.items() %}
+{%- if classe != 'NORMAL' %}
+        if ({{ modalites }} contains etiquette) { return {{ indices[classe] }}; }
+{%- endif %}
+{%- endfor %}
+        return 0;   // NORMAL
+    }
+}

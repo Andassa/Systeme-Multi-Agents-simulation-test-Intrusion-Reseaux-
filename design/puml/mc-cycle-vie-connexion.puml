@@ -1,0 +1,41 @@
+@startuml mc-cycle-vie-connexion
+title Modele Conceptuel - Cycle de vie d'une Connexion
+
+skinparam state {
+  BackgroundColor #FDFDFD
+  BorderColor #333333
+  FontName Arial
+}
+
+[*] --> RECUE : e2 / ARRIVEE_CONNEXION\n[n_act++]
+
+RECUE --> EN_EXTRACTION : e3 / DEMANDE_EXTRACTION
+RECUE --> REJETEE : e13 / SATURATION_FILE\n[|file| > kappa]
+
+EN_EXTRACTION --> EN_ANALYSE : e4 / VECTEUR_PRET\n[encodage one-hot + normalisation]
+
+EN_ANALYSE --> VERDICTS_PARTIELS : e5 xor e6\n[un seul verdict recu]
+
+VERDICTS_PARTIELS --> DECIDEE : e5 and e6\n[fusion nominale]
+VERDICTS_PARTIELS --> DECIDEE : e12 / EXPIRATION_ATTENTE\n[mode degrade]
+
+DECIDEE --> ALERTEE : e8 / ALERTE_GENEREE\n[classe != normal]
+DECIDEE --> JOURNALISEE : e9 [classe == normal]
+ALERTEE --> JOURNALISEE : e9 / ENTREE_JOURNALISEE
+
+JOURNALISEE --> CLOTUREE : interne\n[n_act--]
+REJETEE --> CLOTUREE : [n_rej++]
+
+CLOTUREE --> [*]
+
+note right of VERDICTS_PARTIELS
+  Point de tolerance aux pannes.
+  Sans e12, la panne d'un seul
+  detecteur bloquerait le systeme.
+end note
+
+note bottom of DECIDEE
+  Mise a jour de Theta (TP,FP,TN,FN)
+  et du niveau de menace mu.
+end note
+@enduml

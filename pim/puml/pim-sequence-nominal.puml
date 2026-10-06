@@ -1,0 +1,72 @@
+@startuml pim-sequence-nominal
+title PIM - Sequence nominale : de l'arrivee d'une connexion a sa journalisation
+
+skinparam sequence {
+  ArrowColor #333333
+  LifeLineBorderColor #666666
+  ParticipantBackgroundColor #FDFDFD
+  ParticipantBorderColor #333333
+}
+
+participant "AgentCapture" as CAP
+participant "AgentExtraction" as EXT
+participant "AgentDecision" as DEC
+participant "AgentIADetection" as IA
+participant "AgentReglesDetection" as REG
+participant "AgentAlertes" as ALE
+participant "AgentJournalisation" as JOU
+
+autonumber
+
+== P1 : Pretraitement ==
+CAP -> CAP : lireProchaineConnexion()
+note right of CAP : e2 ARRIVEE_CONNEXION\netat := RECUE
+CAP -> EXT : REQUEST(Connexion)
+CAP -> JOU : INFORM(EntreeJournal[ARRIVEE])
+activate EXT
+EXT -> EXT : encoder()\none-hot + normalisation
+note right of EXT : e4 VECTEUR_PRET\netat := EN_ANALYSE
+EXT --> CAP : INFORM(VecteurCaracteristiques)
+deactivate EXT
+
+== P2 : Notification ==
+EXT -> DEC : INFORM(connexionId, Vecteur)
+activate DEC
+note right of DEC : etat := CONSULTATION\narmement du delai tau
+
+== P3 : Consultation (l'AgentDecision est initiateur) ==
+DEC -> IA : QUERY(connexionId, Vecteur)
+DEC -> REG : QUERY(connexionId, Vecteur)
+
+activate IA
+IA -> IA : classer()\nvote de la foret
+IA --> DEC : INFORM(Verdict[IA])
+deactivate IA
+note left of IA : e6 VERDICT_IA
+
+activate REG
+REG -> REG : evaluer()\nsignatures RM1..RM11
+REG --> DEC : INFORM(Verdict[Regles])
+deactivate REG
+note left of REG : e5 VERDICT_REGLES\njustification := "RM3"
+
+== Fusion ==
+DEC -> DEC : fusionner()\nU(k) = w_IA.c_IA + w_R.c_R\n       - lambda_FP.(1-mu)
+note right of DEC : etat := FUSION -> EMISSION\ne7 DECISION_EMISE
+
+== P4 / P5 : Alerte et journalisation ==
+DEC -> ALE : INFORM(Decision)
+DEC -> JOU : INFORM(EntreeJournal[DECISION])
+deactivate DEC
+
+activate ALE
+ALE -> ALE : produire()\ngravite selon la classe
+ALE -> JOU : INFORM(EntreeJournal[ALERTE])
+deactivate ALE
+note right of ALE : e8 ALERTE_GENEREE\nn_al++, n_int++
+
+activate JOU
+JOU -> JOU : consigner()\nmise a jour de Theta (TP/FP/TN/FN)\net de mu
+deactivate JOU
+note right of JOU : e9 ENTREE_JOURNALISEE\netat := CLOTUREE
+@enduml

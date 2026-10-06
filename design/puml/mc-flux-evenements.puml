@@ -1,0 +1,53 @@
+@startuml mc-flux-evenements
+title Modele Conceptuel - Flux d'evenements entre les 7 agents
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor #FDFDFD
+  BorderColor #333333
+}
+
+rectangle "Frontiere du systeme" as F #EEEEEE {
+  rectangle "AgentCapture\n<<reactif>>" as CAP
+}
+
+rectangle "AgentExtraction\n<<reactif>>" as EXT
+rectangle "AgentReglesDetection\n<<reactif>>" as REG
+rectangle "AgentIADetection\n<<base sur un modele>>" as IA
+rectangle "AgentDecision\n<<base sur les buts>>" as DEC
+rectangle "AgentAlertes\n<<reactif>>" as ALE
+rectangle "AgentJournalisation\n<<reactif>>" as JOU
+
+database "NSL-KDD\nKDDTrain+ / KDDTest+" as DS
+
+DS --> CAP : lecture sequentielle
+CAP --> EXT : e3 : DEMANDE_EXTRACTION\n(Connexion)
+EXT --> IA : e4 : VECTEUR_PRET\n(VecteurCaracteristiques, dim 122)
+EXT --> REG : e4 : VECTEUR_PRET\n(Connexion brute)
+REG --> DEC : e5 : VERDICT_REGLES\n(Verdict)
+IA --> DEC : e6 : VERDICT_IA\n(Verdict)
+DEC --> ALE : e7 : DECISION_EMISE\n(Decision)
+DEC --> JOU : e7 : DECISION_EMISE
+ALE --> JOU : e8 : ALERTE_GENEREE
+
+CAP ..> JOU : e9
+EXT ..> JOU : e9
+
+note bottom of JOU
+  Seul agent ayant acces a
+  l'etiquette reelle (ADR-07).
+  Calcule Theta et les metriques
+  en temps reel.
+end note
+
+note top of DEC
+  Buts : G1 minimiser FN, G2 borner FP,
+  G3 respecter tau, G4 mode degrade.
+  Arbitrage module par mu.
+end note
+
+legend right
+  Fleches pleines : messages FIPA-ACL (ADR-06)
+  Fleches pointillees : journalisation
+endlegend
+@enduml

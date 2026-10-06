@@ -1,0 +1,344 @@
+@startuml psm-metamodele
+' Métamodèle PSM — sous-ensemble restreint de GAML (GAMA 2025.6.4)
+' Correspond à 03-psm/gaml-psm.ecore
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+hide circle
+
+title Métamodèle PSM — GAML restreint (GAMA 2025.6.4)
+
+package "Racine" #F4F8FB {
+  class GamlModel {
+    + nom : String
+    + auteur : String
+    + description : String
+  }
+  class Import {
+    + chemin : String
+  }
+  class GlobalSection
+}
+
+package "Espèces et comportements" #F7F4FB {
+  class Species {
+    + nom : String
+    + architecture : ArchitectureKind
+    + skills : SkillKind [*]
+    + nbInstances : int
+    + classePim : String
+  }
+  class Attribute {
+    + nom : String
+    + type : GamlType
+    + typeElement : GamlType
+    + initialisation : String
+    + estParametre : bool
+    + libelle : String
+    + minimum : String
+    + maximum : String
+    + categorie : String
+  }
+  class Reflex {
+    + nom : String
+    + condition : String
+    + <b>boiteLue : MailboxKind</b>
+    + <b>ordre : int</b>
+  }
+  class Action {
+    + nom : String
+    + typeRetour : GamlType
+  }
+  class Parameter {
+    + nom : String
+    + type : GamlType
+    + valeurDefaut : String
+  }
+  class State {
+    + nom : String
+    + estInitial : bool
+    + estFinal : bool
+  }
+  class Transition {
+    + condition : String
+    + evenementPim : String
+  }
+  class Task {
+    + nom : String
+    + <b>expressionPoids : String</b>
+    + butPim : String
+  }
+}
+
+package "Instructions (jeu fermé)" #FBF8F4 {
+  abstract class Statement {
+    + commentaire : String
+  }
+  class Affectation
+  class Conditionnelle
+  class Boucle
+  class Ask
+  class AppelAction
+  class CommunicationFipa {
+    + genre : FipaCallKind
+    + performatif : Performative
+    + protocole : String
+    + destinataires : String
+    + contenus : String
+    + messageSource : String
+    + contratPim : String
+  }
+  class Ecriture
+  class Creation
+  class ZoneProtegee {
+    + identifiant : String
+    + contenuParDefaut : String
+    + intention : String
+  }
+  class ParcoursClassifieur {
+    + vecteurEntree : String
+    + distributionSortie : String
+  }
+  class ExpressionBrute {
+    + texte : String
+    + justification : String
+  }
+  class Argument {
+    + nom : String
+    + expression : String
+  }
+}
+
+package "Ressource ML" #F4FBF6 {
+  class ClassifierResource {
+    + nom : String
+    + cheminSource : String
+    + <b>strategieGeneration : GenerationStrategy</b>
+    + cheminTableGeneree : String
+    + nbArbres : int
+    + profondeurMax : int
+    + nbNoeuds : int
+    + nbCaracteristiques : int
+    + nbClasses : int
+  }
+}
+
+package "Expériences et sorties" #FBF4F6 {
+  class Experiment {
+    + nom : String
+    + type : ExperimentKind
+    + repetitions : int
+  }
+  abstract class Output {
+    + nom : String
+  }
+  class Display {
+    + rafraichissement : String
+  }
+  class Monitor {
+    + expression : String
+  }
+  abstract class Layer {
+    + nom : String
+  }
+  class ChartLayer {
+    + typeGraphe : ChartKind
+  }
+  class SpeciesLayer {
+    + aspect : String
+  }
+  class Series {
+    + nom : String
+    + expression : String
+    + couleur : String
+  }
+}
+
+' ---------- Containment ----------
+GamlModel *-- "0..*" Import : imports
+GamlModel *-- "0..1" GlobalSection : sectionGlobale
+GamlModel *-- "0..*" Species : especes
+GamlModel *-- "0..*" Experiment : experiences
+GamlModel *-- "0..*" ClassifierResource : ressources
+
+GlobalSection *-- "0..*" Attribute
+GlobalSection *-- "0..*" Action
+GlobalSection *-- "0..*" Reflex
+GlobalSection *-- "0..*" Statement : initialisation
+
+Species *-- "0..*" Attribute
+Species *-- "0..*" Reflex
+Species *-- "0..*" Action
+Species *-- "0..*" State : etats
+Species *-- "0..*" Task : taches
+Species --> "0..1" Species : parent
+
+Reflex *-- "0..*" Statement : corps
+Action *-- "0..*" Parameter
+Action *-- "0..*" Statement : corps
+State *-- "0..*" Transition
+State *-- "0..*" Statement : corps
+Transition --> "1" State : cible
+Task *-- "0..*" Statement : corps
+
+Statement <|-- Affectation
+Statement <|-- Conditionnelle
+Statement <|-- Boucle
+Statement <|-- Ask
+Statement <|-- AppelAction
+Statement <|-- CommunicationFipa
+Statement <|-- Ecriture
+Statement <|-- Creation
+Statement <|-- ZoneProtegee
+Statement <|-- ParcoursClassifieur
+Statement <|-- ExpressionBrute
+
+Conditionnelle *-- "0..*" Statement : alors / sinon
+Boucle *-- "0..*" Statement : corps
+Ask *-- "0..*" Statement : corps
+AppelAction *-- "0..*" Argument
+Creation *-- "0..*" Argument : initialisations
+Creation --> "1" Species : espece
+ParcoursClassifieur --> "1" ClassifierResource : ressource
+
+Experiment *-- "0..*" Attribute : parametres
+Experiment *-- "0..*" Output : sorties
+Output <|-- Display
+Output <|-- Monitor
+Display *-- "0..*" Layer : couches
+Layer <|-- ChartLayer
+Layer <|-- SpeciesLayer
+ChartLayer *-- "0..*" Series
+SpeciesLayer --> "1" Species
+
+' ---------- Enumérations ----------
+enum ArchitectureKind {
+  REFLEX
+  FSM
+  WEIGHTED_TASKS
+}
+enum SkillKind {
+  FIPA
+  MESSAGING
+}
+enum MailboxKind {
+  AUCUNE
+  INFORMS
+  QUERIES
+  REQUESTS
+  REFUSES
+  FAILURES
+  AGREES
+  PROPOSES
+}
+enum Performative {
+  INFORM
+  QUERY
+  REQUEST
+  REFUSE
+  FAILURE
+  AGREE
+  PROPOSE
+}
+enum FipaCallKind {
+  START_CONVERSATION
+  REPLY
+  END_CONVERSATION
+}
+enum GenerationStrategy {
+  TABLE
+  INLINE
+}
+enum GamlType {
+  INT
+  FLOAT
+  BOOL
+  STRING
+  LIST
+  MAP
+  MATRIX
+  AGENT
+  MESSAGE
+  FILE
+  PAIR
+  UNKNOWN
+}
+enum ExperimentKind {
+  GUI
+  BATCH
+}
+enum ChartKind {
+  SERIES
+  HISTOGRAM
+  PIE
+  XY
+}
+
+note top of ArchitectureKind
+  <b>Restriction assumee (ADR-04)</b>
+  GAMA 2025.6.4 en propose onze.
+  Trois retenues : celles sur lesquelles
+  se projettent les trois classes
+  d'agent du PIM.
+
+  T-1 AgentReactif     -> REFLEX
+  T-2 AgentBaseModele  -> FSM
+  T-3 AgentBaseButs    -> WEIGHTED_TASKS
+end note
+
+note right of Reflex
+  <b>C1</b> Au plus un Reflex par couple
+  (Species, MailboxKind != AUCUNE).
+
+  Contrainte de plateforme : lire
+  m.contents retire le message de
+  TOUTES les listes. Deux reflex sur
+  la meme boite = course silencieuse.
+
+  <b>C5</b> Les ordre d'une meme Species
+  sont deux a deux distincts (ENF5).
+end note
+
+note right of Task
+  expressionPoids <b>EST</b> la fonction
+  d'utilite U(a) du PIM.
+
+  GAMA recalcule tous les poids a
+  chaque pas et execute le maximum :
+  argmax_a U(a), sans adaptation.
+
+  <b>Tache sentinelle obligatoire</b>
+  weight: 0.1, corps vide.
+  Sinon un agent au repos executerait
+  une tache arbitraire.
+end note
+
+note bottom of ExpressionBrute
+  <b>Echappatoire — a compter</b>
+  justification obligatoire.
+  Le generateur emet le decompte
+  en fin d'execution : c'est un
+  indicateur de qualite du PSM.
+  Objectif : moins de 5 occurrences.
+end note
+
+note bottom of ClassifierResource
+  <b>ADR-03 bis — double generation</b>
+  TABLE  : table de noeuds + parcours
+           iteratif (execution)
+  INLINE : cascade if/else lisible
+           (memoire, soutenance)
+
+  Meme modele, deux gabarits Jinja2.
+end note
+
+note bottom of ZoneProtegee
+  <b>ADR-05</b>
+  // @user-begin(id) ... // @user-end(id)
+  Le generateur relit l'existant et
+  reinjecte : regenerer ne detruit pas
+  le code metier ecrit a la main.
+end note
+
+@enduml
