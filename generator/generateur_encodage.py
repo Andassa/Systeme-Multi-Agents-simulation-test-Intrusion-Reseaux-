@@ -1,21 +1,9 @@
 #!/usr/bin/env python3
-"""
-Construction du contexte de génération de generated/encodage.gaml.
+"""Traduit ml/artifacts/parametres_encodage.json en littéraux GAML.
 
-Ce module traduit ml/artifacts/parametres_encodage.json en littéraux GAML. Il ne
-prend aucune décision : il transcrit. Toute décision d'encodage a été prise
-à l'Étape 3 et mesurée là-bas.
-
-Point délicat, à ne pas manquer
--------------------------------
-preprocessing.py construit le vecteur dans cet ordre : d'abord les 38 colonnes
-numériques dans l'ordre du fichier, puis les blocs one-hot de protocol_type,
-service et flag. Les indices des indicatrices dépendent donc de la taille des
-blocs précédents. Se tromper d'offset donnerait un vecteur syntaxiquement
-valide et sémantiquement faux — la forêt lirait « service=http » là où le
-modèle a appris « flag=SF ». Le contrôle croisé est fait par
-verifier_encodage.py, qui compare l'encodage GAML réimplémenté en Python au
-vecteur produit par preprocessing.py sur des lignes réelles.
+Ordre du vecteur, le même que preprocessing.py : 38 colonnes numériques,
+puis one-hot de protocol_type, service et flag. L'offset d'un bloc dépend
+de la taille des blocs précédents. verifier_encodage.py compare les deux.
 """
 import json
 import os
