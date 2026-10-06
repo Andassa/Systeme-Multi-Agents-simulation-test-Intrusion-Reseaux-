@@ -1,24 +1,10 @@
 #!/usr/bin/env python3
-"""
-Chargement du métamodèle et de l'instance PSM.
+"""Charge le métamodèle et l'instance PSM dans un graphe de Noeud.
 
-Deux implémentations, une seule interface
-------------------------------------------
-  BACKEND "pyecore" : chargement par PyEcore. C'est la voie de référence —
-                      l'outil est celui qu'emploie la communauté EMF, et
-                      c'est lui qui valide réellement la conformité.
+  pyecore : si le paquet est installé
+  stdlib  : xml.etree, sans dépendance
 
-  BACKEND "stdlib"  : chargement par xml.etree, sans dépendance.
-
-Pourquoi les deux. Le repli n'est pas là par méfiance envers PyEcore mais
-parce que la génération doit rester exécutable sur une machine où il n'est
-pas installé — c'est le cas de l'environnement où ce projet a été développé.
-Une chaîne IDM qui ne se régénère que sur le poste de son auteur n'est pas
-reproductible, et la reproductibilité est une exigence du projet (ENF5).
-
-Les deux backends produisent le MÊME graphe de Noeud. Le test
-`comparer_backends()` le vérifie quand PyEcore est disponible : sans cette
-comparaison, l'équivalence serait une affirmation.
+comparer_backends() compare les deux graphes quand PyEcore est présent.
 """
 import os
 import tempfile
