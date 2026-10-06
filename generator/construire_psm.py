@@ -1,26 +1,8 @@
 #!/usr/bin/env python3
-"""
-Construction de l'instance PSM complète — application des règles T-1 à T-11.
+"""Écrit psm/psm-ids-complet.xmi à partir des diagrammes PIM (PlantUML).
 
-Pourquoi un script plutôt qu'un fichier XMI saisi à la main
-------------------------------------------------------------
-Le PSM complet compte plus de 400 éléments. Le saisir à la main serait
-long, illisible et surtout non reproductible : une correction du PIM
-imposerait une reprise manuelle intégrale, ce qui est précisément le
-travail que l'IDM prétend supprimer.
-
-Ce script EST la transformation PIM -> PSM. Chaque fonction construire_*
-implémente les règles T-1 à T-11 documentées en psm/05-PSM.md §4. La
-traçabilité est portée dans le modèle lui-même par les attributs
-`classePim`, `butPim` et `contratPim`.
-
-Limite à énoncer honnêtement : le PIM n'existe pas ici sous forme de modèle
-formel (c'est un document et des diagrammes PlantUML). Cette transformation
-est donc écrite d'après le PIM, non calculée depuis lui. Une chaîne
-entièrement outillée aurait un PIM Ecore et une transformation M2M — hors
-d'atteinte en trois semaines, et sans valeur pédagogique supplémentaire.
-
-Sortie : psm/psm-ids-complet.xmi
+Le PIM n'est pas un modèle Ecore : la transformation est codée ici, pas calculée.
+classePim, butPim et contratPim sont recopiés dans l'instance.
 """
 import os
 import xml.etree.ElementTree as ET
