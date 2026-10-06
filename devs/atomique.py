@@ -1,10 +1,3 @@
-"""DEVS parallèle, temps entier.
-
-Un pas de temps est un cycle. Les sorties d'un micro-pas sont livrées
-dans le même instant aux autres atomes ; `restant == 0` enchaîne un
-micro-pas sans faire avancer l'horloge. C'est le délai de transport nul
-des couplages DEVS : la durée est dans `ta`, pas dans le lien.
-"""
 from __future__ import annotations
 
 from math import inf
@@ -35,10 +28,11 @@ class Atomique:
 
 
 class Coordinateur:
-    def __init__(self, composants: dict, liens: list, limite_micro: int = 64):
+    def __init__(self, composants: dict, liens: list, limite_micro: int = 64, tracer: bool = True):
         self.composants = composants
         self.liens = liens
         self.limite_micro = limite_micro
+        self.tracer = tracer
         self.t = 0
         self.trace = []
 
@@ -70,7 +64,7 @@ class Coordinateur:
                 for port, msgs in (self.composants[n].sortie() or {}).items():
                     if not msgs:
                         continue
-                    if port != "charge":
+                    if self.tracer and port != "charge":
                         for m in msgs:
                             self.trace.append((self.t, micro, n, port, m))
                     for src, p_out, dst, p_in in self.liens:
