@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""Rejoue en Python le métier des zones @user-* de ids_sma.gaml, sur tout KDDTest+.
-
-    signatures_rm1_rm11           -> evaluer_signatures()
-    calcul_utilite                -> utilite()
-    mise_a_jour_matrice_confusion -> mettre_a_jour()
-
-GAMA n'est pas lancé. L'écart mesuré ici vient de cette transcription
-(seuils, fusion, abstention, indices de la matrice).
-"""
+"""Zones @user-* de ids_sma.gaml, rejouées sur KDDTest+."""
 import json
 import os
 import sys
@@ -26,16 +18,10 @@ CLASSES = ["NORMAL", "DOS", "PROBE", "R2L", "U2R"]
 NB = 5
 
 
-# ==========================================================================
-# Transcription de generated/encodage.gaml : valeur_brute
-# ==========================================================================
 def valeur_brute(v, j, bmin, bmax):
     return v[j] * (bmax[j] - bmin[j]) + bmin[j]
 
 
-# ==========================================================================
-# Transcription de la zone signatures_rm1_rm11
-# ==========================================================================
 def evaluer_signatures(v, IDX, bmin, bmax):
     p = [1.0 / NB] * NB          # ABSTENTION par défaut
     br = lambda nom: valeur_brute(v, IDX[nom], bmin, bmax)
@@ -85,9 +71,6 @@ def evaluer_signatures(v, IDX, bmin, bmax):
     return p, False
 
 
-# ==========================================================================
-# Transcription de la zone calcul_utilite
-# ==========================================================================
 def utilite(c_ia, c_rg, degrade, a_ia, poids_ia, lambda_fp, menace):
     u = [0.0] * NB
     for k in range(NB):
@@ -100,14 +83,7 @@ def utilite(c_ia, c_rg, degrade, a_ia, poids_ia, lambda_fp, menace):
     return u
 
 
-# ==========================================================================
-# Transcription de la zone mise_a_jour_matrice_confusion
-# ==========================================================================
 def metriques(mc):
-    """Exactitude à 5 classes et exactitude binaire (attaque / normal).
-
-    DoS classé PROBE compte comme une erreur à 5 classes et comme un vrai positif binaire.
-    """
     total = int(mc.sum())
     bons = int(sum(mc[k][k] for k in range(NB)))
     exact_5 = 0.0 if total == 0 else bons / total
@@ -121,7 +97,6 @@ def metriques(mc):
     return exact_5, exact_bin, rappel, taux_fp
 
 
-# ==========================================================================
 def main(limite=None):
     params = GE.charger_parametres()
     features = params["features"]
