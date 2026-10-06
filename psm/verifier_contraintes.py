@@ -1,20 +1,11 @@
 #!/usr/bin/env python3
-"""
-Vérification d'une instance PSM : conformité au métamodèle + contraintes C1..C10.
+"""Conformité d'une instance PSM au métamodèle, puis contraintes C1..C10.
 
-Deux niveaux de contrôle, à ne pas confondre :
+La conformité vérifie classes, attributs, références et littéraux d'énumération.
+C1..C10 portent sur des instances conformes dont le sens est faux
+(plusieurs reflex sur la même boîte, ordres non distincts, etc.).
 
-  CONFORMITÉ  — l'instance n'emploie que des classes, attributs et références
-                déclarés dans gaml-psm.ecore, et les valeurs d'énumération
-                existent. C'est ce qu'EMF vérifie au chargement.
-
-  CONTRAINTES — C1 à C10 (cf. 05-PSM.md §3). Elles décrivent des modèles
-                parfaitement conformes mais sémantiquement faux. C1, C7 et C8
-                sont les plus importantes : leur violation ne produirait aucune
-                erreur, ni à la génération, ni à la compilation, ni à
-                l'exécution. Seulement de mauvais résultats.
-
-Usage : python3 verifier_contraintes.py [instance.xmi] [metamodele.ecore]
+Usage : python verifier_contraintes.py [instance.xmi] [metamodele.ecore]
 """
 import sys
 import xml.etree.ElementTree as ET
