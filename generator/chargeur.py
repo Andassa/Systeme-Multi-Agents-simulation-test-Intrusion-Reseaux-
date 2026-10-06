@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""Charge le métamodèle et l'instance PSM dans un graphe de Noeud.
-
-  pyecore : si le paquet est installé
-  stdlib  : xml.etree, sans dépendance
-
-comparer_backends() compare les deux graphes quand PyEcore est présent.
-"""
+"""Charge l'ecore et le XMI. Backend pyecore, sinon xml.etree."""
 import os
 import tempfile
 import xml.etree.ElementTree as ET
@@ -21,7 +15,6 @@ except ImportError:
     PYECORE_DISPONIBLE = False
 
 
-# ==========================================================================
 class Noeud:
     """Élément de modèle, indépendant du backend."""
 
@@ -49,18 +42,7 @@ class Noeud:
         return f"<{self.classe} {self.attrs.get('nom', '')}>"
 
 
-# ==========================================================================
 class Metamodele:
-    """
-    Ce que le générateur a besoin de savoir du .ecore :
-      - le type de chaque feature (pour distinguer containment et attribut)
-      - la traduction des littéraux d'énumération vers la syntaxe GAML
-        (GamlType.LIST -> 'list', ArchitectureKind.WEIGHTED_TASKS -> 'weighted_tasks')
-
-    Cette dernière correspondance vient du métamodèle et non d'un dictionnaire
-    codé dans le générateur : la syntaxe concrète est une propriété du PSM.
-    """
-
     def __init__(self, chemin):
         racine = ET.parse(chemin).getroot()
         self.classes, self.enums, self.litteraux, parents = {}, {}, {}, {}
@@ -150,9 +132,6 @@ class Metamodele:
         return noeud
 
 
-# ==========================================================================
-# BACKEND stdlib
-# ==========================================================================
 def _charger_stdlib(chemin_xmi, mm):
     racine_xml = ET.parse(chemin_xmi).getroot()
 
@@ -184,9 +163,6 @@ def _charger_stdlib(chemin_xmi, mm):
     return construire(racine_xml, "GamlModel")
 
 
-# ==========================================================================
-# BACKEND pyecore
-# ==========================================================================
 def _nettoyer_xml_pour_pyecore(chemin):
     """Crée une copie temporaire du XML sans commentaires pour pyecore."""
     chemin_abs = os.path.abspath(chemin)
@@ -289,13 +265,7 @@ def _charger_pyecore(chemin_xmi, chemin_ecore, mm):
                 pass
 
 
-# ==========================================================================
 def charger(chemin_ecore, chemin_xmi, backend="auto"):
-    """
-    Retourne (racine, mm, backend_effectif).
-
-    backend : "auto" | "pyecore" | "stdlib"
-    """
     mm = Metamodele(chemin_ecore)
     demande_explicite = backend == "pyecore"
     if backend == "auto":
@@ -307,10 +277,6 @@ def charger(chemin_ecore, chemin_xmi, backend="auto"):
             return _charger_pyecore(chemin_xmi, chemin_ecore, mm), mm, "pyecore"
         except Exception as e:
             if demande_explicite:
-                # Aucun repli quand PyEcore a été demandé nommément. Un repli
-                # silencieux transformerait la commande de vérification en
-                # formalité : elle afficherait « génération réussie » sans
-                # avoir rien vérifié de ce qu'on lui demandait de vérifier.
                 raise RuntimeError(
                     f"PyEcore a échoué : {type(e).__name__}: {e}\n"
                     "  Le backend a été demandé explicitement : aucun repli.\n"
