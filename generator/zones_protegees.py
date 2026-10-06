@@ -1,33 +1,12 @@
 #!/usr/bin/env python3
-"""
-Zones protégées — ADR-05.
+"""Relit et réinjecte le corps des zones @user-* avant d'écrire le GAML.
 
-Problème résolu
----------------
-L'énoncé impose deux choses contradictoires en apparence : le GAML ne doit
-pas être écrit à la main, et le code métier doit être complété. La frontière
-retenue est la zone protégée : le générateur écrit la structure, le
-développeur écrit le corps métier, et une régénération ne détruit rien.
-
-Mécanique
----------
     // @user-begin(identifiant)
-    // À COMPLÉTER — intention
-    <contenu écrit par le développeur>
+    <corps>
     // @user-end(identifiant)
 
-Avant d'écrire, le générateur relit le fichier cible, extrait le contenu de
-chaque zone et le réinjecte dans la sortie.
-
-Deux garde-fous, parce que ce mécanisme perd du travail quand il échoue
------------------------------------------------------------------------
-1. Une zone présente dans le fichier existant mais ABSENTE du modèle
-   signalerait que du code métier va disparaître. Le générateur refuse alors
-   d'écrire, sauf --forcer. C'est le seul cas où le générateur s'arrête.
-
-2. Le fichier précédent est sauvegardé en .bak avant écriture. Un mécanisme
-   qui ne peut pas se tromper n'existe pas ; un mécanisme dont l'erreur est
-   irréversible est un défaut de conception.
+Une zone présente dans le fichier et absente du modèle bloque l'écriture,
+sauf --forcer. Le fichier précédent est copié en .bak.
 """
 import os
 import re
