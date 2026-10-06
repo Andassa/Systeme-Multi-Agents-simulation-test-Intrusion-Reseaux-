@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
-"""
-Garde-fou léger : fige le contrat de validation sans relancer GAMA.
-
-    python tests/test_baseline.py
-
-Échoue si la cible ML dérive ou si le modèle GAML perd un
-invariant critique (file Decision, P3 plat, zones métier).
-"""
+"""Contrat de validation, sans GAMA."""
 from __future__ import annotations
 
 import json
