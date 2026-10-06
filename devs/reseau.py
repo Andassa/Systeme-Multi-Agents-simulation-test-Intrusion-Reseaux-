@@ -1,15 +1,3 @@
-"""Réseau DEVS des sept agents de ids_sma.gaml.
-
-Le classement RM1–RM11 et la forêt ne sont pas rejoués ici : un détecteur
-reçoit une fonction `evaluer(idc) -> distribution`. Le réseau reproduit
-le protocole : P1, P2, consultation P3, fusion, P4, P5, file, panne, délai.
-
-La fusion est celle de la zone `calcul_utilite`. Le tirage de panne est
-celui de l'état ACTIF : réponse d'abord, Bernoulli ensuite.
-`latence` est le nombre de cycles avant la réponse. 0 répond dans le
-micro-pas suivant (boîte vidée dans le pas). `inf` ne répond pas : c'est
-le cas où `delai_garde` tranche, comme `cycle - cycleDebutConsultation`.
-"""
 from __future__ import annotations
 
 import random
@@ -76,11 +64,6 @@ def classe_de(u) -> str:
 
 
 class Capture(Atomique):
-    """Lit au plus `debit` connexions par cycle tant que la charge connue
-    est strictement sous `capacite`. La charge vient du port `charge` :
-    dans GAMA c'est une lecture de `charge_decision()` en début de reflex,
-    elle ne bouge pas pendant le `loop` de Capture."""
-
     def __init__(self, monde: Monde):
         super().__init__("capture")
         self.monde = monde
@@ -236,14 +219,6 @@ class Detecteur(Atomique):
 
 
 class Decision(Atomique):
-    """INACTIF, puis ARMER (émission P3), ATTENTE (`delai_garde`), TRANCHER.
-
-    Deux verdicts : fusion nominale. Un verdict et un refus : dégradé tout
-    de suite, sans attendre le délai. Zéro verdict à l'échéance : abandon.
-    Un verdict sans refus à l'échéance : dégradé. Deux abstentions, ou
-    l'unique verdict abstenu en dégradé : abandon, pas de P4/P5.
-    """
-
     def __init__(self, monde: Monde):
         super().__init__("decision")
         self.monde = monde
@@ -445,7 +420,7 @@ class Simulation:
 
 
 def executer(monde: Monde | None = None, evaluer_regles=dos, evaluer_ia=dos_faible,
-             latence_regles=0, latence_ia=0, horizon=None) -> Simulation:
+             latence_regles=0, latence_ia=0, horizon=None, tracer: bool = True) -> Simulation:
     monde = monde or Monde()
     if horizon is None:
         lats = [v for v in (latence_regles, latence_ia) if v != inf]
@@ -467,6 +442,6 @@ def executer(monde: Monde | None = None, evaluer_regles=dos, evaluer_ia=dos_faib
         "alertes": alertes,
         "journal": journal,
     }
-    co = Coordinateur(comps, LIENS)
+    co = Coordinateur(comps, LIENS, tracer=tracer)
     co.jusqua(horizon)
     return Simulation(monde, decision, alertes, journal, co)
