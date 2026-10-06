@@ -18,8 +18,10 @@ GAMA avance par cycle : `reflex`, messages FIPA (`request`, `query`, `inform`, `
 |---|---|
 | `devs/atomique.py` | Atome et coordinateur (micro-pas à temps constant, puis avance du cycle) |
 | `devs/reseau.py` | Capture, Extraction, Règles, IA, Décision, Alertes, Journal, couplages P1–P5 |
+| `devs/kdd.py` | Distributions de KDDTest+ : RM1–RM11 et `foret_export.json` |
+| `devs/mesurer.py` | Exactitude et rappel quand la panne ou le délai changent |
 
-Règles et IA sont des fonctions `evaluer(idc)` qui rendent une distribution sur les cinq classes. La fusion est celle de la zone `calcul_utilite`. Ce module ne lit pas NSL-KDD et ne rejoue pas `foret_table.csv`. Le score 0,8102 reste celui de `ml/artifacts/resultats_fusion.json` et de GAMA.
+Règles et IA sont des fonctions `evaluer(idc)`. La fusion est celle de la zone `calcul_utilite`. `python -m devs` utilise des distributions fixes, pour lire le protocole. `python -m devs.mesurer` branche les distributions réelles du test.
 
 Correspondance avec `ids_sma.gaml` :
 
@@ -32,7 +34,37 @@ Correspondance avec `ids_sma.gaml` :
 | Deux abstentions | Abandon, pas de P4 ni de P5 |
 | File pleine | Rejet. Une connexion active plus `capacite` en attente |
 
-`python -m devs` enchaîne cinq scénarios : nominal (trace P1→P5 dans le cycle 0), panne certaine, IA muette, les deux muets, file avec un service de 2 cycles. `tests/test_devs.py` fixe ces cas. Aucune dépendance hors la bibliothèque standard.
+`python -m devs` enchaîne cinq scénarios : nominal (trace P1→P5 dans le cycle 0), panne certaine, IA muette, les deux muets, file avec un service de 2 cycles. `tests/test_devs.py` fixe ces cas, sans dépendance hors la bibliothèque standard.
+
+## Panne et délai sur KDDTest+
+
+NSL-KDD est un jeu de connexions déjà agrégées, utile pour comparer des détecteurs, pas une mesure sur du trafic réel. 0,8102 en cinq classes est le point nominal reproductible de ce dépôt, pas un record du domaine.
+
+`python -m devs.mesurer` fait passer les 22 544 lignes de KDDTest+ dans le réseau. Débit 1. Graine 0. Un abandon n'est pas une classe : il est faux sur l'ensemble du test. L'exactitude « émises » ne compte que les décisions nominales et dégradées. Sortie : `ml/artifacts/resultats_devs.json`.
+
+Panne de l'IA, `delai_garde = 3`, réponse immédiate. La reprise est 0,20, sauf la dernière ligne où l'IA ne revient pas.
+
+| taux_panne | reprise | Exactitude | Rappel | Exactitude émises | Abandons |
+|---:|---:|---:|---:|---:|---:|
+| 0 | 0,20 | 0,8102 | 0,7224 | 0,8102 | 0 |
+| 0,05 | 0,20 | 0,6854 | 0,7021 | 0,7871 | 2 913 |
+| 0,10 | 0,20 | 0,6128 | 0,6925 | 0,7733 | 4 677 |
+| 0,20 | 0,20 | 0,5100 | 0,6765 | 0,7417 | 7 041 |
+| 0,50 | 0,20 | 0,3783 | 0,6571 | 0,6934 | 10 246 |
+| 1 | 0 | 0,2056 | 0,6288 | 0,5601 | 14 269 |
+
+À panne 0, on retrouve la fusion. À panne 1, les 14 269 abandons sont les abstentions des règles : sans IA, une abstention ne devient pas la classe NORMAL. Le rappel retombe alors sur celui des règles seules (0,6288). Une panne de 0,05 suffit à faire passer l'exactitude de 0,8102 à 0,6854.
+
+Délai, IA en retard de 5 cycles, panne 0, capacité de file 1 (une consultation à la fois) :
+
+| delai_garde | Exactitude | Rappel | Abandons | Nominales | Dégradées |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 0,4076 | 0,6583 | 9 492 | 7 514 | 5 538 |
+| 3 | 0,5077 | 0,6776 | 7 133 | 11 272 | 4 139 |
+| 5 | 0,8102 | 0,7224 | 0 | 22 544 | 0 |
+| 10 | 0,8102 | 0,7224 | 0 | 22 544 | 0 |
+
+Dès que le délai couvre la latence, la fusion revient. En dessous, une réponse tardive peut encore entrer dans la consultation suivante : le verdict n'est pas filtré par l'identifiant de connexion, ni ici ni dans `ids_sma.gaml`.
 
 ## Mesures
 
@@ -130,10 +162,14 @@ python verifier_tout.py
 python ml/evaluer_fusion.py
 python generator/oracle_simulation.py
 python -m devs
+python -m devs.mesurer
 python tests/test_devs.py
+python tests/test_devs_kdd.py
 cd generator && python generer.py
 ```
 
 `oracle_simulation.py` rejoue en Python les trois zones métier sur KDDTest+. Il ne démarre pas GAMA.
 
 `python -m devs` non plus. Il imprime les cinq scénarios de protocole (nominal, panne, IA muette, silence, file).
+
+`python -m devs.mesurer` recalcule le tableau panne / délai sur KDDTest+.
