@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
-"""foret_export.json vers une table CSV ou une cascade if/else.
-
-TABLE  : nœuds aplatis, parcours itératif en GAML
-INLINE : if/else sur une sous-forêt
-
-L'entraînement teste bin(x) <= seuil_bin, avec
-bin(x) = searchsorted(edges, x, side='left').
-Donc bin(x) <= b équivaut à x <= edges[b]. La condition GAML est x <= seuil.
-verifier_equivalence() compare ce parcours à la forêt numpy.
-"""
+"""foret_export.json vers CSV (TABLE) ou if/else (INLINE). Condition GAML : x <= seuil."""
 import json
 import os
 import sys
@@ -18,9 +9,6 @@ RACINE = os.path.dirname(ICI)
 SOURCE = os.path.join(RACINE, "ml", "artifacts", "foret_export.json")
 
 
-# ==========================================================================
-# Aplatissement : N arbres -> une table unique à indices absolus
-# ==========================================================================
 def aplatir(foret, n_arbres=None, profondeur_max=None):
     """
     Produit (lignes, racines).
@@ -80,9 +68,6 @@ def _profondeurs(arbre):
     return prof
 
 
-# ==========================================================================
-# Cible TABLE
-# ==========================================================================
 def ecrire_csv(lignes, classes, chemin):
     entetes = ["feature", "seuil", "gauche", "droite"] + \
               ["p_" + c for c in classes]
@@ -95,9 +80,6 @@ def ecrire_csv(lignes, classes, chemin):
     return chemin
 
 
-# ==========================================================================
-# Cible INLINE — cascade if/else lisible
-# ==========================================================================
 def cascade_gaml(foret, n_arbres, profondeur_max, noms_features, indent="        "):
     """
     Cascade if/else pour une sous-forêt réduite.
@@ -138,9 +120,6 @@ def _cascade_noeud(arbre, i, prof, prof_max, K, noms, indent):
     return out
 
 
-# ==========================================================================
-# VÉRIFICATION — la transpilation est-elle exacte ?
-# ==========================================================================
 def parcourir(lignes, racines, x, strict=False):
     """
     Réimplémentation en Python de l'algorithme que le GAML généré exécutera.
@@ -199,7 +178,6 @@ def verifier_equivalence(foret, lignes, racines, n_echantillons=2000):
     return resultats, Xte.shape[0]
 
 
-# ==========================================================================
 def charger(chemin=SOURCE):
     with open(chemin, encoding="utf-8") as f:
         return json.load(f)
