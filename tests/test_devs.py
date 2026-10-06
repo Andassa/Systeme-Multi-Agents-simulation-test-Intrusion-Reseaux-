@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Protocole DEVS : nominal, panne, délai, file. Pas de GAMA, pas de NSL-KDD."""
 from __future__ import annotations
 
 import sys
@@ -99,8 +98,6 @@ def test_file():
 
 
 def test_conflit_deux_verdicts_a_lecheance():
-    # Les deux répondent exactement au délai : la confluence doit fusionner
-    # en nominal, le poids 90 de `fusionner` devant le dégradé.
     sim = executer(Monde(n=1, delai_garde=3), latence_ia=3, latence_regles=3)
     b = sim.decision.bilan
     if len(b) != 1 or b[0]["mode"] != "nominal" or b[0]["t"] != 3:
