@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
-"""PSM vers GAML.
-
-    python generer.py [--backend auto|pyecore|stdlib] [--forcer] [--verifier]
-
-gaml-psm.ecore et psm-ids-complet.xmi passent par chargeur.py.
-Les gabarits Jinja2 écrivent le GAML. foret_export.json passe
-par transpileur_foret.py (CSV ou cascade if/else).
-"""
+"""PSM vers GAML. python generer.py [--backend auto|pyecore|stdlib] [--forcer] [--verifier]"""
 import argparse
 import datetime
 import os
