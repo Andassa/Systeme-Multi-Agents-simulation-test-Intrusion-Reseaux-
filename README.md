@@ -6,11 +6,33 @@ Le squelette GAML, l'encodage et la table de forêt sortent de `psm/` via `gener
 
 ## Temps
 
-Pas de spécification DEVS dans ce dépôt : ni modèle atomique (X, S, Y, δext, δint, λ, ta), ni réseau couplé.
+GAMA avance par cycle : `reflex`, messages FIPA (`request`, `query`, `inform`, `refuse`).
 
-L'horloge est le cycle GAMA. Les agents avancent par `reflex`. Les messages passent par le skill FIPA : `request`, `query`, `inform`, `refuse`.
+États d'une connexion : `design/puml/mc-cycle-vie-connexion.puml`. Messages e3 à e9 : `design/puml/mc-flux-evenements.puml`.
 
-États d'une connexion : `design/puml/mc-cycle-vie-connexion.puml` (RECUE, EN_EXTRACTION, EN_ANALYSE, DECIDEE, JOURNALISEE, CLOTUREE ; REJETEE si la file de Décision est pleine). Noms des messages e3 à e9 : `design/puml/mc-flux-evenements.puml`.
+## DEVS
+
+`devs/` reprend les sept agents en DEVS parallèle. L'unité de temps est le cycle. Chaque atome a un temps restant (`ta`). Une sortie est livrée dans le même instant : le délai est dans l'atome, pas dans le lien.
+
+| Fichier | Rôle |
+|---|---|
+| `devs/atomique.py` | Atome et coordinateur (micro-pas à temps constant, puis avance du cycle) |
+| `devs/reseau.py` | Capture, Extraction, Règles, IA, Décision, Alertes, Journal, couplages P1–P5 |
+
+Règles et IA sont des fonctions `evaluer(idc)` qui rendent une distribution sur les cinq classes. La fusion est celle de la zone `calcul_utilite`. Ce module ne lit pas NSL-KDD et ne rejoue pas `foret_table.csv`. Le score 0,8102 reste celui de `ml/artifacts/resultats_fusion.json` et de GAMA.
+
+Correspondance avec `ids_sma.gaml` :
+
+| Situation | Effet |
+|---|---|
+| `latence = 0` | Réponse dans le pas, comme un reflex qui vide sa boîte |
+| `latence = inf` | Pas de réponse. À `delai_garde`, dégradé s'il reste un verdict, abandon sinon |
+| Panne (`taux_panne`) | `refuse` après le tirage. Dégradé immédiat si un autre verdict est déjà là (`nb_refus_recus > 0`) |
+| Deux réponses exactement à l'échéance | Nominal. La confluence prend la fusion, pas le dégradé |
+| Deux abstentions | Abandon, pas de P4 ni de P5 |
+| File pleine | Rejet. Une connexion active plus `capacite` en attente |
+
+`python -m devs` enchaîne cinq scénarios : nominal (trace P1→P5 dans le cycle 0), panne certaine, IA muette, les deux muets, file avec un service de 2 cycles. `tests/test_devs.py` fixe ces cas. Aucune dépendance hors la bibliothèque standard.
 
 ## Mesures
 
@@ -37,6 +59,7 @@ Python 3.10 ou plus récent.
 ```bash
 pip install pyecore jinja2 numpy pandas lxml scikit-learn
 python tests/test_baseline.py
+python tests/test_devs.py
 python verifier_tout.py
 ```
 
@@ -77,7 +100,8 @@ psm/           gaml-psm.ecore, instances XMI
 generator/     chargement PyEcore ou xml.etree, gabarits Jinja2
 ml/            règles, forêt, fusion ; JSON dans ml/artifacts/
 gama/          projet GAMA ; modèle models/ids_sma.gaml
-tests/         test_baseline.py
+devs/          même protocole, DEVS parallèle (cycle = unité de temps)
+tests/         test_baseline.py, test_devs.py
 paths.py       chemins des dossiers
 ```
 
@@ -105,7 +129,11 @@ python tests/test_baseline.py
 python verifier_tout.py
 python ml/evaluer_fusion.py
 python generator/oracle_simulation.py
+python -m devs
+python tests/test_devs.py
 cd generator && python generer.py
 ```
 
 `oracle_simulation.py` rejoue en Python les trois zones métier sur KDDTest+. Il ne démarre pas GAMA.
+
+`python -m devs` non plus. Il imprime les cinq scénarios de protocole (nominal, panne, IA muette, silence, file).
