@@ -1,33 +1,13 @@
 #!/usr/bin/env python3
-"""
-Transpileur de forêt aléatoire — ADR-03 bis, double génération.
+"""foret_export.json vers une table CSV ou une cascade if/else.
 
-Entrée  : ml/artifacts/foret_export.json (format neutre produit à l'Étape 3)
-Sorties : selon ClassifierResource.strategieGeneration
-            TABLE  -> table de nœuds aplatie (CSV) + action GAML de parcours itératif
-            INLINE -> cascade if/else lisible, sous-forêt réduite
+TABLE  : nœuds aplatis, parcours itératif en GAML
+INLINE : if/else sur une sous-forêt
 
-Les deux cibles sont produites depuis la MÊME source. C'est le point de
-variation qui rend la séparation modèle/implémentation observable plutôt
-que revendiquée.
-
-Point de sémantique à ne pas rater
-----------------------------------
-L'entraînement discrétise chaque variable en intervalles (quantiles du train)
-et un nœud interne teste `bin(x) <= seuil_bin`. L'export a converti le seuil
-en valeur réelle : `edges[f][b]`.
-
-    bin(x) = searchsorted(edges, x, side='left')
-           = plus petit indice i tel que edges[i] >= x
-
-    donc   bin(x) <= b   <=>   edges[b] >= x   <=>   x <= edges[b]
-
-La condition GAML est donc `x <= seuil`, comparaison LARGE. Le commentaire
-de export_foret.py annonçait une comparaison stricte : c'est faux, et l'erreur
-est invisible sauf sur les points exactement égaux à un seuil — c'est-à-dire
-précisément sur les variables binaires one-hot, où la quasi-totalité des
-valeurs valent 0 ou 1. La fonction verifier_equivalence() ci-dessous tranche
-la question par la mesure plutôt que par le raisonnement.
+L'entraînement teste bin(x) <= seuil_bin, avec
+bin(x) = searchsorted(edges, x, side='left').
+Donc bin(x) <= b équivaut à x <= edges[b]. La condition GAML est x <= seuil.
+verifier_equivalence() compare ce parcours à la forêt numpy.
 """
 import json
 import os
