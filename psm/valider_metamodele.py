@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""
-Validation structurelle de gaml-psm.ecore sans dépendance externe.
-
-Pourquoi ce script existe : PyEcore n'est pas installable dans l'environnement
-d'exécution utilisé pour la conception (pas d'accès PyPI). Plutôt que de
-déclarer le métamodèle « valide » sans preuve, on vérifie ici les propriétés
-qu'EMF vérifierait au chargement :
+"""Contrôles structurels de gaml-psm.ecore, sans PyEcore.
 
   V1  XML bien formé
   V2  unicité des noms de classifieurs
