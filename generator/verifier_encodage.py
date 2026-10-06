@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Compare la transcription GAML de encoder_connexion au vecteur de preprocessing.py.
-
-Un décalage d'indice dans un bloc one-hot laisse un vecteur de taille 122.
-La forêt lit alors une autre variable. Contrôle sur les premières lignes de KDDTest+.
-"""
+"""encoder_connexion contre le vecteur de preprocessing.py, sur KDDTest+."""
 import os
 import sys
 
