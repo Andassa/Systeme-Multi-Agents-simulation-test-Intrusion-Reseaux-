@@ -1,30 +1,14 @@
 #!/usr/bin/env python3
-"""
-Test de cycle : générer -> compléter à la main -> régénérer.
+"""Deux régénérations de ids_sma.gaml : le corps des zones @user-* doit rester identique.
 
-Pourquoi ce test existe
------------------------
-Le mécanisme de zones protégées (ADR-05) est le seul endroit du projet où
-une erreur détruit du travail humain. Une génération unique ne prouve rien :
-le défaut apparaît au DEUXIÈME passage, quand le générateur relit ce qu'il a
-lui-même écrit.
+  1. génération
+  2. écriture d'un marqueur dans chaque zone
+  3. régénération : le marqueur est intact
+  4. seconde régénération : fichier identique à l'étape 3
+  5. zone retirée du modèle : le générateur refuse d'écrire
 
-C'est exactement ce qui s'est produit ici : le commentaire d'intention était
-émis à l'intérieur de la zone, donc relu comme du contenu utilisateur, donc
-réinjecté — et dupliqué à chaque régénération. Invisible à la première
-génération.
-
-Scénario vérifié
-----------------
-  1. génération initiale
-  2. écriture de code métier dans chaque zone protégée
-  3. régénération
-  4. le code métier est intact
-  5. régénération à nouveau
-  6. le fichier est IDENTIQUE à celui de l'étape 3 (idempotence)
-  7. suppression d'une zone du modèle -> le générateur refuse d'écrire
-
-L'étape 6 est celle qui aurait attrapé le défaut d'intention dupliquée.
+Un commentaire d'intention émis dans la zone était relu comme du code utilisateur
+et dupliqué à chaque passage. La seconde régénération attrape ce cas.
 """
 import os
 import re
@@ -36,11 +20,8 @@ ICI = os.path.dirname(os.path.abspath(__file__))
 RACINE = os.path.dirname(ICI)
 GAML = os.path.join(RACINE, "gama", "models", "ids_sma.gaml")
 
-# Marqueur volontairement ASCII PUR. Il contenait un tiret cadratin, replie
-# en "-" par le filtre en_ascii() du generateur : le test cherchait donc une
-# chaine qui n'existait plus et concluait a la perte du code metier. Le defaut
-# etait dans le test, pas dans le generateur — mais un test qui crie au loup
-# finit par etre ignore, ce qui est exactement ce qu'il ne faut pas.
+# ASCII seul. Un tiret cadratin était replié en "-" par en_ascii() :
+# le test cherchait une chaîne absente du fichier généré.
 MARQUE = "// CODE METIER DE TEST - ne doit jamais disparaitre"
 
 
