@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Enchaîne les contrôles Python depuis la racine.
-
-    python verifier_tout.py
-
-Ne compile pas le GAML.
-"""
+"""Contrôles Python depuis la racine. Ne compile pas le GAML."""
 import os
 import subprocess
 import sys
