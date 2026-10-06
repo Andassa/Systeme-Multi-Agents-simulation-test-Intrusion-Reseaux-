@@ -1,21 +1,8 @@
 #!/usr/bin/env python3
-"""
-Vérification croisée de l'encodage généré.
+"""Compare la transcription GAML de encoder_connexion au vecteur de preprocessing.py.
 
-Question posée : l'action GAML `encoder_connexion` produit-elle EXACTEMENT le
-vecteur que preprocessing.py a présenté à la forêt pendant l'apprentissage ?
-
-Pourquoi cette question est la plus importante de l'Étape 6
-------------------------------------------------------------
-Un décalage d'un seul indice dans les blocs one-hot donnerait un vecteur
-parfaitement valide et parfaitement faux : la forêt lirait « service=http »
-là où le modèle a appris « flag=SF ». La simulation tournerait, afficherait
-des courbes, produirait des alertes — avec des performances dégradées et
-aucune erreur d'exécution pour le signaler.
-
-C'est la même famille d'erreur que la comparaison stricte/large trouvée à
-l'Étape 5, et elle se vérifie de la même façon : sur données réelles, contre
-la référence.
+Un décalage d'indice dans un bloc one-hot laisse un vecteur de taille 122.
+La forêt lit alors une autre variable. Contrôle sur les premières lignes de KDDTest+.
 """
 import os
 import sys
