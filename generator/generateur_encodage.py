@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Traduit ml/artifacts/parametres_encodage.json en littéraux GAML.
-
-Ordre du vecteur, le même que preprocessing.py : 38 colonnes numériques,
-puis one-hot de protocol_type, service et flag. L'offset d'un bloc dépend
-de la taille des blocs précédents. verifier_encodage.py compare les deux.
-"""
+"""parametres_encodage.json vers littéraux GAML. Ordre : 38 numériques, puis one-hot protocol, service, flag."""
 import json
 import os
 
@@ -138,9 +133,6 @@ def contexte(racines_foret, horodatage, chemin=PARAMS):
     }
 
 
-# ==========================================================================
-# Réimplémentation Python de encoder_connexion, pour vérification croisée
-# ==========================================================================
 def encoder_python(ligne_brute, ctx, params):
     """
     Transcription en Python de l'action GAML générée. Sert d'oracle :
