@@ -1,15 +1,9 @@
 #!/usr/bin/env python3
-"""
-Vérification complète de la chaîne IDM, depuis la racine du projet.
+"""Enchaîne les contrôles Python depuis la racine.
 
     python verifier_tout.py
 
-Ce script existe pour répondre à une question précise : après un déplacement
-du projet, est-ce que tout fonctionne encore ? Il enchaîne les vérifications
-déjà écrites à chaque étape et rend un verdict unique.
-
-Il ne vérifie PAS la compilation GAML — cela demande GAMA, qui n'est pas
-pilotable depuis Python. Ce point reste manuel.
+Ne compile pas le GAML.
 """
 import os
 import subprocess
