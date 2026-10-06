@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
-"""Conformité d'une instance PSM au métamodèle, puis contraintes C1..C10.
-
-La conformité vérifie classes, attributs, références et littéraux d'énumération.
-C1..C10 portent sur des instances conformes dont le sens est faux
-(plusieurs reflex sur la même boîte, ordres non distincts, etc.).
-
-Usage : python verifier_contraintes.py [instance.xmi] [metamodele.ecore]
-"""
+"""Conformité au métamodèle, puis contraintes C1..C10."""
 import sys
 import xml.etree.ElementTree as ET
 from collections import defaultdict
