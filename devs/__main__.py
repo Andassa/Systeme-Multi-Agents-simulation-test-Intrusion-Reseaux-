@@ -1,7 +1,3 @@
-"""Scénarios du réseau DEVS. Ne lance pas GAMA.
-
-    python -m devs
-"""
 from math import inf
 
 from devs.reseau import Monde, executer, uniforme
