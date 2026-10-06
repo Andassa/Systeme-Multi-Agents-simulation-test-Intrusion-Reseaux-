@@ -1,7 +1,4 @@
-"""
-Forêt aléatoire numpy (CART / Gini) — structure d'arbres maîtrisée pour
-la transpilation GAML (ADR-03). Pas de scikit-learn.
-"""
+"""Forêt aléatoire numpy, CART, critère de Gini. Arbres exportés vers GAML."""
 from __future__ import annotations
 
 import numpy as np
