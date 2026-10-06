@@ -1,23 +1,9 @@
 /**
- * Table d'encodage NSL-KDD — GÉNÉRÉE depuis ml/artifacts/parametres_encodage.json
+ * Encodage NSL-KDD, issu de ml/artifacts/parametres_encodage.json.
+ * Ne pas éditer : le fichier est réécrit par le générateur.
  *
- * NE PAS MODIFIER. Toute retouche serait perdue à la régénération, et surtout
- * ferait diverger la simulation du modèle entraîné.
- *
- * Pourquoi ce fichier est généré et non écrit à la main
- * -----------------------------------------------------
- * L'encodage (vocabulaires one-hot, bornes de normalisation) n'est pas une
- * décision de conception : c'est une DONNÉE produite par l'apprentissage, sur
- * le TRAIN uniquement. La saisir à la main introduirait un risque de
- * divergence silencieuse entre ce que la forêt a appris et ce que la
- * simulation lui présente — l'erreur la plus coûteuse possible, puisqu'elle
- * dégraderait les performances sans produire la moindre erreur d'exécution.
- *
- * Règle appliquée à l'Étape 6 : est généré tout ce qui est dérivable d'un
- * artefact existant ; reste en zone protégée ce qui encode une décision.
- *
- * {{ nb_numeriques }} variables numériques + {{ nb_onehot }} indicatrices = {{ nb_features }} composantes
- * Généré le : {{ horodatage }}
+ * {{ nb_numeriques }} variables numériques + {{ nb_onehot }} indicatrices = {{ nb_features }} composantes.
+ * Généré le {{ horodatage }}.
  */
 model encodage_nslkdd
 
