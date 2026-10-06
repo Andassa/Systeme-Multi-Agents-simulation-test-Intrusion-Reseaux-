@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""Relit et réinjecte le corps des zones @user-* avant d'écrire le GAML.
-
-    // @user-begin(identifiant)
-    <corps>
-    // @user-end(identifiant)
-
-Une zone présente dans le fichier et absente du modèle bloque l'écriture,
-sauf --forcer. Le fichier précédent est copié en .bak.
-"""
+"""Réinjecte le corps des zones @user-* . Refuse d'écrire si une zone du fichier disparaît du modèle, sauf --forcer."""
 import os
 import re
 import shutil
